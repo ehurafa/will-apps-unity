@@ -8,6 +8,21 @@ O objetivo é portar os jogos e funcionalidades do app PWA para Unity, ganhando 
 
 **Repositório:** `git@github.com:ehurafa/will-apps-unity.git`
 
+> ⚠️ **IMPORTANTE: Abordagem Code-Only (Vibe Coding)**
+>
+> O desenvolvedor deste projeto **não tem experiência com o Unity Editor**.
+> Portanto, toda a criação de GameObjects, UI, física e lógica deve ser feita
+> **100% via código C#**, utilizando scripts "Setup" que constroem tudo
+> programaticamente em runtime.
+>
+> **O uso do Unity Editor deve ser o mínimo possível:**
+> - Criar cenas vazias
+> - Anexar UM ÚNICO script Setup na Main Camera de cada cena
+> - Registrar as cenas no Build Profiles
+>
+> **Nunca peça para o usuário arrastar componentes, configurar o Inspector
+> manualmente, ou criar GameObjects pela Hierarchy.**
+
 ---
 
 ## Regras de Negócio
@@ -131,70 +146,80 @@ MainMenu (Home)
 ```
 Assets/
 ├── Scenes/
-│   ├── MainMenu.unity        ✅ Configurada
+│   ├── MainMenu.unity         ✅ Testada
 │   ├── VideoPlayer.unity      ✅ Configurada
-│   └── FlappyBird.unity       🔧 Em progresso
+│   ├── FlappyBird.unity       ✅ Configurada
+│   └── TicTacToe.unity        ✅ Configurada
 ├── Scripts/
-│   ├── MainMenuController.cs  ✅ Completo
-│   └── VideoPlayerController.cs ✅ Completo
+│   ├── MainMenuSetup.cs       ✅ Setup: Menu Principal
+│   ├── VideoPlayerSetup.cs    ✅ Setup: Player de Vídeo
+│   ├── FlappyBirdSetup.cs     ✅ Setup: Monta o jogo Flappy Bird
+│   ├── BirdController.cs      ✅ Física do pássaro
+│   ├── PipeSpawner.cs         ✅ Gera canos
+│   ├── PipeMove.cs            ✅ Move canos
+│   ├── FlappyGameManager.cs   ✅ Estado do jogo, pontuação
+│   └── TicTacToeSetup.cs      ✅ Setup: Jogo da Velha completo
 ├── Settings/
 └── TextMesh Pro/
 ```
+
+### Como os scripts Setup funcionam
+Cada cena precisa apenas da **Main Camera** com o script Setup correspondente.
+Ao dar Play, o script cria **todos** os GameObjects, Canvas, UI, física e lógica
+automaticamente via código. Nenhuma configuração manual no Editor é necessária.
 
 ---
 
 ## Funcionalidades
 
-### 1. Main Menu (Cena: `MainMenu`) ✅
+### 1. Main Menu (Cena: `MainMenu`) ✅ Testada
 
 Menu principal com navegação entre as telas do app.
 
-- **Script:** `MainMenuController.cs`
-- **GameObjects:**
-  - `Canvas` com 3 botões (TextMeshPro):
-    - `Btn_VideoPlayer` → Carrega cena `VideoPlayer`
-    - `Btn_FlappyBird` → Carrega cena `FlappyBird`
-    - `Btn_TicTacToe` → Carrega cena `TicTacToe`
-  - `MainMenuController` (Empty Object com o script anexado)
+- **Script:** `MainMenuSetup.cs` (anexar na Main Camera)
+- **Criado via código:**
+  - Canvas com título "Will Apps" e subtítulo
+  - Botão ASSISTIR → Carrega cena `VideoPlayer`
+  - Botão JOGAR → Carrega cena `FlappyBird`
+  - Botões individuais: Flappy Bird, Jogo da Velha
+  - Footer com versão
 - **Canvas Scaler:** Scale With Screen Size (1080x1920)
 
 ### 2. Video Player (Cena: `VideoPlayer`) ✅
 
 Player de vídeo nativo do Unity com streaming via URL.
 
-- **Script:** `VideoPlayerController.cs`
-- **Configuração do Video Player:**
-  - Source: URL
-  - Render Mode: Camera Near Plane
+- **Script:** `VideoPlayerSetup.cs` (anexar na Main Camera)
+- **Criado via código:**
+  - Video Player (URL, Camera Near Plane)
+  - Barra superior: Botão Voltar + Título
+  - Barra inferior: Status + Botão Play/Pause
   - URL padrão: Big Buck Bunny (MP4)
-- **GameObjects:**
-  - `Video Player` (componente nativo)
-  - `Canvas` com botões:
-    - `Btn_Back` → Volta para `MainMenu`
-    - `Btn_PlayPause` → Toggle Play/Pause
-  - `VideoController` (Empty Object com o script anexado)
 
-### 3. Flappy Bird (Cena: `FlappyBird`) 🔧 Em Progresso
+### 3. Flappy Bird (Cena: `FlappyBird`) ✅
 
-Jogo Flappy Bird com física 2D, baseado no original do PWA.
+Jogo Flappy Bird completo com física 2D.
 
-- **Concluído:**
-  - Cena criada
-  - Objeto `Bird` (Circle Sprite amarelo, Scale 0.5)
-    - Componentes: `Rigidbody2D`, `CircleCollider2D`
-- **Pendente:**
-  - `BirdController.cs` (pulo ao tocar na tela, colisão)
-  - `PipeSpawner.cs` (gerar canos com gap aleatório)
-  - `PipeMove.cs` (mover canos para a esquerda)
-  - `GameManager.cs` (pontuação, game over, restart)
-  - Prefab dos canos (top/bottom + trigger de pontuação)
-  - UI: Texto de pontuação, painel de Game Over
+- **Script:** `FlappyBirdSetup.cs` (anexar na Main Camera)
+- **Scripts auxiliares:** `BirdController.cs`, `PipeSpawner.cs`, `PipeMove.cs`, `FlappyGameManager.cs`
+- **Criado via código:**
+  - Pássaro (Circle Sprite amarelo, Rigidbody2D, pulo por toque)
+  - Canos com gap aleatório e score trigger
+  - Bordas (topo/fundo)
+  - UI: Pontuação, Recorde, Tela Inicial, Game Over com Restart
+  - High Score salvo via PlayerPrefs
 
-### 4. Jogo da Velha / Tic-Tac-Toe (Cena: `TicTacToe`) ❌ Não Iniciado
+### 4. Jogo da Velha (Cena: `TicTacToe`) ✅
 
-- **Pendente:**
-  - Cena `TicTacToe`
-  - `TicTacToeController.cs` (lógica do jogo, UI)
+Jogo da Velha completo com IA.
+
+- **Script:** `TicTacToeSetup.cs` (anexar na Main Camera)
+- **Criado via código:**
+  - Tabuleiro 3x3 (GridLayout)
+  - Placar Jogador (X) vs IA (O)
+  - IA com estratégia: vencer → bloquear → centro → cantos → aleatório
+  - Delay de 500ms na IA
+  - Painel de resultado + botões Reiniciar e Menu
 
 ---
 
@@ -215,7 +240,12 @@ As seguintes cenas devem estar registradas no Build Profiles:
 1. `MainMenu` (index 0 — cena inicial)
 2. `VideoPlayer`
 3. `FlappyBird`
-4. `TicTacToe` *(quando criada)*
+4. `TicTacToe`
+
+### Tags Customizadas (ProjectSettings/TagManager.asset)
+- `Obstacle` — Canos e bordas do Flappy Bird
+- `Ground` — Chão
+- `ScoreTrigger` — Trigger invisível entre os canos para contar pontos
 
 ---
 
@@ -260,3 +290,23 @@ PIPE_COLOR = #95E1D3
 2. Selecione **Android**.
 3. Clique em **Build** e escolha onde salvar o APK.
 4. Instale o APK no dispositivo Android.
+
+---
+
+## Changelog
+
+### 2026-03-06 — Refatoração Code-Only
+- Refatoração completa para abordagem 100% via código.
+- Removidos scripts manuais (`MainMenuController.cs`, `VideoPlayerController.cs`).
+- Criados 8 scripts Setup que constroem tudo programaticamente.
+- Menu principal testado com sucesso no Editor.
+- Tags customizadas adicionadas ao TagManager.
+- **Pendente:** Testar Flappy Bird, Jogo da Velha e Video Player no Editor e no Android.
+
+### 2026-02-16 — Setup Inicial
+- Projeto criado no Unity Hub (Universal 2D, Unity 6 LTS).
+- Android Build Support configurado.
+- Estrutura de pastas criada (Scripts, Scenes, Prefabs, Sprites, Audio).
+- Menu principal e Video Player configurados manualmente no Editor.
+- Flappy Bird iniciado (Bird com física).
+- Repositório conectado ao GitHub.
