@@ -176,7 +176,7 @@ public static class SongDatabase
             });
         }
 
-        return songs;
+        return songs.ToArray();
     }
 
     private static void ParseInfo(string text, ref string title, ref string artist)
