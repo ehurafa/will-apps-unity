@@ -152,21 +152,28 @@ Assets/
 │   ├── VideoPlayer.unity      ✅ Configurada
 │   ├── FlappyBird.unity       ✅ Configurada
 │   ├── FlappyNinja.unity      ✅ Configurada
+│   ├── GuitarFlash.unity      ✅ Configurada
 │   └── TicTacToe.unity        ✅ Configurada
 ├── Scripts/
 │   ├── MainMenuSetup.cs       ✅ Setup: Menu Principal
 │   ├── PlaySetup.cs           ✅ Setup: Seleção de Jogos
 │   ├── WatchSetup.cs          ✅ Setup: Listagem de Vídeos
 │   ├── VideoPlayerSetup.cs    ✅ Setup: Player de Vídeo
-│   ├── FlappyBirdSetup.cs     ✅ Setup: Monta o jogo Flappy Bird
+│   ├── FlappyBirdSetup.cs     ✅ Setup: Flappy Bird
 │   ├── BirdController.cs      ✅ Física do pássaro
-│   ├── FlappyNinjaSetup.cs    ✅ Setup: Flappy Ninja completo
+│   ├── FlappyNinjaSetup.cs    ✅ Setup: Flappy Ninja
 │   ├── NinjaBirdController.cs ✅ Física do ninja
 │   ├── NinjaCharacter.cs      ✅ Dados dos personagens
+│   ├── GuitarFlashSetup.cs    ✅ Setup: Guitar Flash
+│   ├── SongDatabase.cs        ✅ Músicas e beatmaps
+│   ├── NoteController.cs      ✅ Nota caindo
+│   ├── RhythmScoreManager.cs  ✅ Score/combo/rank
 │   ├── PipeSpawner.cs         ✅ Gera canos/bamboo
 │   ├── PipeMove.cs            ✅ Move canos
 │   ├── FlappyGameManager.cs   ✅ Estado do jogo, pontuação
 │   └── TicTacToeSetup.cs      ✅ Setup: Jogo da Velha completo
+├── Resources/
+│   └── Audio/GuitarFlash/     🎵 Arquivos de música (.mp3/.ogg)
 ├── Settings/
 └── TextMesh Pro/
 ```
@@ -252,7 +259,24 @@ Variação do Flappy Bird com tema Naruto.
   - High Score salvo via PlayerPrefs
   - Reutiliza `PipeSpawner.cs` e `PipeMove.cs` do Flappy Bird
 
-### 7. Jogo da Velha (Cena: `TicTacToe`) ✅
+### 7. Guitar Flash (Cena: `GuitarFlash`) ✅
+
+Jogo de ritmo estilo Guitar Hero com 4 faixas.
+
+- **Scripts:** `GuitarFlashSetup.cs`, `SongDatabase.cs`, `NoteController.cs`, `RhythmScoreManager.cs`
+- **Criado via código:**
+  - Seleção de música (cards com BPM e duração)
+  - 3 dificuldades: Fácil / Médio / Difícil
+  - 4 faixas neon (vermelho, azul, verde, amarelo)
+  - Notas caindo sincronizadas com BPM, hit zone com botões touch
+  - Scoring: Perfect (±50ms) / Great (±100ms) / Good (±150ms) / Miss
+  - Combo com multiplicador (1x→2x→4x→8x)
+  - Tela de resultados: rank (S/A/B/C/D), accuracy, stats
+  - Controles: teclado (D/F/J/K ou setas) + touch
+  - Áudio via Resources.Load (pasta `Audio/GuitarFlash/`)
+- **Músicas:** Insônia (Hungria ft Tribo da Periferia, 136 BPM)
+
+### 8. Jogo da Velha (Cena: `TicTacToe`) ✅
 
 Jogo da Velha completo com IA.
 
@@ -286,7 +310,8 @@ As seguintes cenas devem estar registradas no Build Profiles:
 4. `VideoPlayer`
 5. `FlappyBird`
 6. `FlappyNinja`
-7. `TicTacToe`
+7. `GuitarFlash`
+8. `TicTacToe`
 
 ### Tags Customizadas (ProjectSettings/TagManager.asset)
 - `Obstacle` — Canos e bordas do Flappy Bird
@@ -340,6 +365,15 @@ PIPE_COLOR = #95E1D3
 ---
 
 ## Changelog
+
+### 2026-03-08 — Guitar Flash
+- Criado jogo Guitar Flash com 4 scripts: `GuitarFlashSetup.cs`, `SongDatabase.cs`, `NoteController.cs`, `RhythmScoreManager.cs`.
+- 4 faixas neon com notas caindo, scoring Perfect/Great/Good/Miss.
+- Combo com multiplicador e ranking S/A/B/C/D.
+- Beatmap gerado por BPM (seed fixa para consistência).
+- Música: Insônia (Hungria ft Tribo, 136 BPM) com 3 dificuldades.
+- Card Guitar Flash desbloqueado na tela Play.
+- Build Profiles agora com 8 cenas.
 
 ### 2026-03-08 — Flappy Ninja
 - Criado jogo Flappy Ninja com `FlappyNinjaSetup.cs`, `NinjaBirdController.cs`, `NinjaCharacter.cs`.

@@ -116,8 +116,8 @@ public class PlaySetup : MonoBehaviour
         CreateGameCard(content.transform, "\ud83e\udd77", "Flappy Ninja", "Voe como um ninja!",
             true, () => SceneManager.LoadScene("FlappyNinja"));
 
-        CreateGameCard(content.transform, "\ud83c\udfb1", "Sinuca", "Em breve...",
-            false, null);
+        CreateGameCard(content.transform, "\ud83c\udfb8", "Guitar Flash", "Jogo de ritmo!",
+            true, () => SceneManager.LoadScene("GuitarFlash"));
 
         CreateGameCard(content.transform, "\ud83c\udccf", "UNO", "Em breve...",
             false, null);
