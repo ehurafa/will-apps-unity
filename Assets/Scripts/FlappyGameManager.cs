@@ -69,6 +69,9 @@ public class FlappyGameManager : MonoBehaviour
         if (startPanel != null) startPanel.SetActive(false);
         if (gameOverPanel != null) gameOverPanel.SetActive(false);
 
+        // Activate bird physics (gravity) when game starts
+        if (bird != null) bird.EnablePhysics();
+
         if (pipeSpawner != null) pipeSpawner.StartSpawning();
     }
 

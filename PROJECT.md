@@ -147,11 +147,15 @@ MainMenu (Home)
 Assets/
 ├── Scenes/
 │   ├── MainMenu.unity         ✅ Testada
+│   ├── Play.unity             ✅ Configurada
+│   ├── Watch.unity            ✅ Configurada
 │   ├── VideoPlayer.unity      ✅ Configurada
 │   ├── FlappyBird.unity       ✅ Configurada
 │   └── TicTacToe.unity        ✅ Configurada
 ├── Scripts/
 │   ├── MainMenuSetup.cs       ✅ Setup: Menu Principal
+│   ├── PlaySetup.cs           ✅ Setup: Seleção de Jogos
+│   ├── WatchSetup.cs          ✅ Setup: Listagem de Vídeos
 │   ├── VideoPlayerSetup.cs    ✅ Setup: Player de Vídeo
 │   ├── FlappyBirdSetup.cs     ✅ Setup: Monta o jogo Flappy Bird
 │   ├── BirdController.cs      ✅ Física do pássaro
@@ -179,13 +183,35 @@ Menu principal com navegação entre as telas do app.
 - **Script:** `MainMenuSetup.cs` (anexar na Main Camera)
 - **Criado via código:**
   - Canvas com título "Will Apps" e subtítulo
-  - Botão ASSISTIR → Carrega cena `VideoPlayer`
-  - Botão JOGAR → Carrega cena `FlappyBird`
-  - Botões individuais: Flappy Bird, Jogo da Velha
+  - Botão ASSISTIR → Carrega cena `Watch`
+  - Botão JOGAR → Carrega cena `Play`
   - Footer com versão
 - **Canvas Scaler:** Scale With Screen Size (1080x1920)
 
-### 2. Video Player (Cena: `VideoPlayer`) ✅
+### 2. Play - Seleção de Jogos (Cena: `Play`) ✅
+
+Telass de seleção de jogos com cards.
+
+- **Script:** `PlaySetup.cs` (anexar na Main Camera)
+- **Criado via código:**
+  - Header com botão Voltar + título "Jogar"
+  - ScrollView com cards de jogos (ícone, nome, descrição)
+  - Jogos disponíveis: Flappy Bird, Jogo da Velha → navegam para suas cenas
+  - Jogos bloqueados: Flappy Ninja, Sinuca, UNO → badge "Bloqueado"
+
+### 3. Watch - Listagem de Vídeos (Cena: `Watch`) ✅
+
+Tela de listagem de vídeos com categorias.
+
+- **Script:** `WatchSetup.cs` (anexar na Main Camera)
+- **Criado via código:**
+  - Header com botão Voltar + título "Assistir"
+  - Tabs: Animes | Filmes (toggle entre categorias)
+  - Cards de vídeo com thumbnail (carregada via URL), título e duração
+  - Ao clicar, passa URL do vídeo via campo estático e carrega cena VideoPlayer
+  - Dados mock hardcoded (Demon Slayer, Big Buck Bunny, Naruto, One Piece)
+
+### 4. Video Player (Cena: `VideoPlayer`) ✅
 
 Player de vídeo nativo do Unity com streaming via URL.
 
@@ -196,7 +222,7 @@ Player de vídeo nativo do Unity com streaming via URL.
   - Barra inferior: Status + Botão Play/Pause
   - URL padrão: Big Buck Bunny (MP4)
 
-### 3. Flappy Bird (Cena: `FlappyBird`) ✅
+### 5. Flappy Bird (Cena: `FlappyBird`) ✅
 
 Jogo Flappy Bird completo com física 2D.
 
@@ -209,7 +235,7 @@ Jogo Flappy Bird completo com física 2D.
   - UI: Pontuação, Recorde, Tela Inicial, Game Over com Restart
   - High Score salvo via PlayerPrefs
 
-### 4. Jogo da Velha (Cena: `TicTacToe`) ✅
+### 6. Jogo da Velha (Cena: `TicTacToe`) ✅
 
 Jogo da Velha completo com IA.
 
@@ -238,9 +264,11 @@ Todas as cenas com UI devem usar:
 ### Scenes no Build
 As seguintes cenas devem estar registradas no Build Profiles:
 1. `MainMenu` (index 0 — cena inicial)
-2. `VideoPlayer`
-3. `FlappyBird`
-4. `TicTacToe`
+2. `Play`
+3. `Watch`
+4. `VideoPlayer`
+5. `FlappyBird`
+6. `TicTacToe`
 
 ### Tags Customizadas (ProjectSettings/TagManager.asset)
 - `Obstacle` — Canos e bordas do Flappy Bird
@@ -294,6 +322,17 @@ PIPE_COLOR = #95E1D3
 ---
 
 ## Changelog
+
+### 2026-03-07 — Telas Play e Watch
+- Criada cena `Play` com `PlaySetup.cs` — hub de seleção de jogos com cards.
+- Criada cena `Watch` com `WatchSetup.cs` — listagem de vídeos com tabs Animes/Filmes.
+- Menu principal atualizado: ASSISTIR → Watch, JOGAR → Play.
+- Removidos botões individuais de jogos do MainMenu.
+- Corrigido bug de gravidade do Flappy Bird (pássaro caía antes de iniciar).
+- Corrigido bug de visibilidade nos ScrollViews (substituído `Mask` por `RectMask2D`).
+- VideoPlayer agora recebe URL e título do vídeo selecionado na tela Watch.
+- Build Profiles agora com 6 cenas.
+- Cenas Play.unity e Watch.unity criadas e registradas no Build Profiles.
 
 ### 2026-03-06 — Refatoração Code-Only
 - Refatoração completa para abordagem 100% via código.

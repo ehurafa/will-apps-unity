@@ -23,9 +23,15 @@ public class BirdController : MonoBehaviour
         {
             rb = gameObject.AddComponent<Rigidbody2D>();
         }
-        rb.gravityScale = 2.5f;
+        // Don't override gravityScale here — FlappyBirdSetup sets it to 0
+        // so the bird stays frozen until the game starts.
         rb.collisionDetectionMode = CollisionDetectionMode2D.Continuous;
         rb.freezeRotation = true;
+    }
+
+    public void EnablePhysics()
+    {
+        if (rb != null) rb.gravityScale = 2.5f;
     }
 
     private void Update()
@@ -67,7 +73,7 @@ public class BirdController : MonoBehaviour
         if (rb != null)
         {
             rb.linearVelocity = Vector2.zero;
-            rb.gravityScale = 2.5f;
+            rb.gravityScale = 0f; // Frozen state until game starts
         }
     }
 

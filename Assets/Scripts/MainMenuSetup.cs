@@ -90,17 +90,10 @@ public class MainMenuSetup : MonoBehaviour
 
         // --- Buttons ---
         CreateMenuButton(content.transform, "\ud83c\udfac  ASSISTIR", "Animes e Filmes",
-            primaryColor, new Color(1f, 0.557f, 0.325f), () => SceneManager.LoadScene("VideoPlayer"));
+            primaryColor, new Color(1f, 0.557f, 0.325f), () => SceneManager.LoadScene("Watch"));
 
         CreateMenuButton(content.transform, "\ud83c\udfae  JOGAR", "Jogos Divertidos",
-            secondaryColor, new Color(0.267f, 0.627f, 0.553f), () => SceneManager.LoadScene("FlappyBird"));
-
-        // --- Spacer ---
-        CreateSpacer(content.transform, 40);
-
-        // --- Game Selection Buttons (smaller) ---
-        CreateSmallButton(content.transform, "\ud83d\udc26  Flappy Bird", () => SceneManager.LoadScene("FlappyBird"));
-        CreateSmallButton(content.transform, "⭕  Jogo da Velha", () => SceneManager.LoadScene("TicTacToe"));
+            secondaryColor, new Color(0.267f, 0.627f, 0.553f), () => SceneManager.LoadScene("Play"));
 
         // --- Footer ---
         CreateFooter(content.transform);
@@ -238,7 +231,7 @@ public class MainMenuSetup : MonoBehaviour
         rect.sizeDelta = new Vector2(900, 40);
 
         TextMeshProUGUI text = footerObj.AddComponent<TextMeshProUGUI>();
-        text.text = "v2.0 Unity";
+        text.text = "v2.1 Unity";
         text.fontSize = 24;
         text.color = new Color(1f, 1f, 1f, 0.3f);
         text.alignment = TextAlignmentOptions.Center;

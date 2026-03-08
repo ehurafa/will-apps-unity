@@ -19,9 +19,20 @@ public class VideoPlayerSetup : MonoBehaviour
     private TextMeshProUGUI playPauseBtnText;
 
     private string videoUrl = "http://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4";
+    private string videoTitle = "Video Player";
 
     private void Start()
     {
+        // Check if a video was selected from the Watch screen
+        if (!string.IsNullOrEmpty(WatchSetup.SelectedVideoUrl))
+        {
+            videoUrl = WatchSetup.SelectedVideoUrl;
+            videoTitle = WatchSetup.SelectedVideoTitle;
+            // Clear after reading so it doesn't persist across navigations
+            WatchSetup.SelectedVideoUrl = "";
+            WatchSetup.SelectedVideoTitle = "";
+        }
+
         SetupCamera();
         SetupVideoPlayer();
         CreateUI();
@@ -101,7 +112,7 @@ public class VideoPlayerSetup : MonoBehaviour
         hlg.childForceExpandHeight = true;
 
         // Back button
-        CreateIconButton(topBar.transform, "Btn_Back", "←", 80, 80, () => SceneManager.LoadScene("MainMenu"));
+        CreateIconButton(topBar.transform, "Btn_Back", "←", 80, 80, () => SceneManager.LoadScene("Watch"));
 
         // Title
         GameObject titleObj = new GameObject("Title");
@@ -112,7 +123,7 @@ public class VideoPlayerSetup : MonoBehaviour
         titleLE.preferredWidth = 600;
 
         TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
-        titleText.text = "Video Player";
+        titleText.text = videoTitle;
         titleText.fontSize = 40;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = Color.white;
