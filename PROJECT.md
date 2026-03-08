@@ -261,20 +261,34 @@ Variação do Flappy Bird com tema Naruto.
 
 ### 7. Guitar Flash (Cena: `GuitarFlash`) ✅
 
-Jogo de ritmo estilo Guitar Hero com 4 faixas.
+Jogo de ritmo estilo Guitar Hero com 4 faixas e detecção automática de batidas.
 
-- **Scripts:** `GuitarFlashSetup.cs`, `SongDatabase.cs`, `NoteController.cs`, `RhythmScoreManager.cs`
+- **Scripts:** `GuitarFlashSetup.cs`, `SongDatabase.cs`, `NoteController.cs`, `RhythmScoreManager.cs`, `BeatDetector.cs`
 - **Criado via código:**
-  - Seleção de música (cards com BPM e duração)
-  - 3 dificuldades: Fácil / Médio / Difícil
+  - Auto-discover de músicas na pasta `Resources/Audio/GuitarFlash/`
+  - **Análise FFT** automática: detecta batidas por frequência (4 bandas → 4 lanes)
+  - 3 dificuldades: Fácil (30% das notas) / Médio (60%) / Difícil (90%)
   - 4 faixas neon (vermelho, azul, verde, amarelo)
-  - Notas caindo sincronizadas com BPM, hit zone com botões touch
   - Scoring: Perfect (±50ms) / Great (±100ms) / Good (±150ms) / Miss
   - Combo com multiplicador (1x→2x→4x→8x)
   - Tela de resultados: rank (S/A/B/C/D), accuracy, stats
   - Controles: teclado (D/F/J/K ou setas) + touch
-  - Áudio via Resources.Load (pasta `Audio/GuitarFlash/`)
-- **Músicas:** Insônia (Hungria ft Tribo da Periferia, 136 BPM)
+
+#### Como adicionar músicas
+
+Coloque os arquivos na pasta:
+```
+Assets/Resources/Audio/GuitarFlash/
+  insonia.ogg                ← arquivo de áudio
+  insonia_info.txt           ← "Insônia|Hungria ft Tribo da Periferia"
+  outra-musica.mp3
+  outra-musica_info.txt      ← "Título|Artista"
+```
+
+- **Formato do info.txt:** `Título da Música|Nome do Artista`
+- O jogo detecta automaticamente todas as músicas e gera beatmaps via FFT
+- Formatos aceitos: `.mp3`, `.ogg`, `.wav`
+- Se não houver `info.txt`, o nome do arquivo é usado como título
 
 ### 8. Jogo da Velha (Cena: `TicTacToe`) ✅
 
@@ -365,6 +379,12 @@ PIPE_COLOR = #95E1D3
 ---
 
 ## Changelog
+
+### 2026-03-08 — Guitar Flash (FFT Beat Detection)
+- Criado `BeatDetector.cs` — análise FFT offline com detecção de onset em 4 bandas de frequência.
+- Atualizado `SongDatabase.cs` — auto-discover de músicas em pastas Resources.
+- Atualizado `GuitarFlashSetup.cs` — beatmaps gerados por FFT quando áudio presente.
+- Adicionada documentação de como adicionar músicas no PROJECT.md.
 
 ### 2026-03-08 — Guitar Flash
 - Criado jogo Guitar Flash com 4 scripts: `GuitarFlashSetup.cs`, `SongDatabase.cs`, `NoteController.cs`, `RhythmScoreManager.cs`.

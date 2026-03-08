@@ -52,6 +52,9 @@ public class GuitarFlashSetup : MonoBehaviour
     private AudioSource audioSource;
     private bool hasAudio = false;
 
+    // Discovered songs
+    private SongDatabase.SongData[] discoveredSongs;
+
     // UI panels
     private GameObject songSelectPanel;
     private GameObject difficultyPanel;
@@ -81,6 +84,9 @@ public class GuitarFlashSetup : MonoBehaviour
         scoreManager = new RhythmScoreManager();
         squareSprite = CreateSquareSprite();
         circleSprite = CreateCircleSprite();
+
+        // Auto-discover songs from Resources
+        discoveredSongs = SongDatabase.DiscoverSongs();
 
         SetupCamera();
         SetupAudio();
@@ -208,7 +214,7 @@ public class GuitarFlashSetup : MonoBehaviour
         CreateSpacer(songSelectPanel.transform, 30);
 
         // Song cards
-        foreach (var song in SongDatabase.AllSongs)
+        foreach (var song in discoveredSongs)
         {
             CreateSongCard(songSelectPanel.transform, song);
         }
@@ -267,10 +273,11 @@ public class GuitarFlashSetup : MonoBehaviour
         // Artist
         CreateText(card.transform, "Artist", song.artist, 26, new Color(1f, 1f, 1f, 0.6f));
 
-        // BPM & Duration
+        // Duration
         int mins = (int)(song.duration / 60);
         int secs = (int)(song.duration % 60);
-        CreateText(card.transform, "Meta", $"{song.bpm} BPM  •  {mins}:{secs:D2}", 22, new Color(1f, 1f, 1f, 0.4f));
+        string metaStr = song.bpm > 0 ? $"{song.bpm} BPM  •  {mins}:{secs:D2}" : $"{mins}:{secs:D2}  •  FFT Auto-detect";
+        CreateText(card.transform, "Meta", metaStr, 22, new Color(1f, 1f, 1f, 0.4f));
 
         // Accent border (left)
         Outline outline = card.AddComponent<Outline>();
@@ -500,11 +507,8 @@ public class GuitarFlashSetup : MonoBehaviour
 
     private void StartGame()
     {
-        // Generate beatmap
-        beatmap = SongDatabase.GenerateBeatmap(selectedSong, selectedDifficulty);
         nextNoteIndex = 0;
         songTime = 0f;
-        isPlaying = true;
         activeNotes.Clear();
         scoreManager.Reset();
 
@@ -513,11 +517,15 @@ public class GuitarFlashSetup : MonoBehaviour
         noteSpawnLeadTime = travelDistance / NOTE_SPEED;
 
         // Try to load audio
-        AudioClip clip = Resources.Load<AudioClip>(selectedSong.audioResource);
+        AudioClip clip = null;
+        if (!string.IsNullOrEmpty(selectedSong.audioResource))
+        {
+            clip = Resources.Load<AudioClip>(selectedSong.audioResource);
+        }
+
         if (clip != null)
         {
             audioSource.clip = clip;
-            audioSource.Play();
             hasAudio = true;
         }
         else
@@ -525,6 +533,13 @@ public class GuitarFlashSetup : MonoBehaviour
             hasAudio = false;
             Debug.Log("Audio not found at: " + selectedSong.audioResource + ". Playing without music.");
         }
+
+        // Generate beatmap — uses FFT if audio clip is available
+        beatmap = SongDatabase.GenerateBeatmap(selectedSong, selectedDifficulty, clip);
+        Debug.Log($"Beatmap generated: {beatmap.Count} notes for '{selectedSong.title}' (difficulty {selectedDifficulty})");
+
+        isPlaying = true;
+        if (hasAudio) audioSource.Play();
 
         // Clean any leftover notes
         foreach (var note in FindObjectsByType<NoteController>(FindObjectsSortMode.None))
