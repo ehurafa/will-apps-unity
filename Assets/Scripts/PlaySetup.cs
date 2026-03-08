@@ -114,7 +114,7 @@ public class PlaySetup : MonoBehaviour
             true, () => SceneManager.LoadScene("TicTacToe"));
 
         CreateGameCard(content.transform, "\ud83e\udd77", "Flappy Ninja", "Voe como um ninja!",
-            false, null);
+            true, () => SceneManager.LoadScene("FlappyNinja"));
 
         CreateGameCard(content.transform, "\ud83c\udfb1", "Sinuca", "Em breve...",
             false, null);

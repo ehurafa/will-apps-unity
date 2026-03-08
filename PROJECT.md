@@ -151,6 +151,7 @@ Assets/
 │   ├── Watch.unity            ✅ Configurada
 │   ├── VideoPlayer.unity      ✅ Configurada
 │   ├── FlappyBird.unity       ✅ Configurada
+│   ├── FlappyNinja.unity      ✅ Configurada
 │   └── TicTacToe.unity        ✅ Configurada
 ├── Scripts/
 │   ├── MainMenuSetup.cs       ✅ Setup: Menu Principal
@@ -159,7 +160,10 @@ Assets/
 │   ├── VideoPlayerSetup.cs    ✅ Setup: Player de Vídeo
 │   ├── FlappyBirdSetup.cs     ✅ Setup: Monta o jogo Flappy Bird
 │   ├── BirdController.cs      ✅ Física do pássaro
-│   ├── PipeSpawner.cs         ✅ Gera canos
+│   ├── FlappyNinjaSetup.cs    ✅ Setup: Flappy Ninja completo
+│   ├── NinjaBirdController.cs ✅ Física do ninja
+│   ├── NinjaCharacter.cs      ✅ Dados dos personagens
+│   ├── PipeSpawner.cs         ✅ Gera canos/bamboo
 │   ├── PipeMove.cs            ✅ Move canos
 │   ├── FlappyGameManager.cs   ✅ Estado do jogo, pontuação
 │   └── TicTacToeSetup.cs      ✅ Setup: Jogo da Velha completo
@@ -235,7 +239,20 @@ Jogo Flappy Bird completo com física 2D.
   - UI: Pontuação, Recorde, Tela Inicial, Game Over com Restart
   - High Score salvo via PlayerPrefs
 
-### 6. Jogo da Velha (Cena: `TicTacToe`) ✅
+### 6. Flappy Ninja (Cena: `FlappyNinja`) ✅
+
+Variação do Flappy Bird com tema Naruto.
+
+- **Scripts:** `FlappyNinjaSetup.cs`, `NinjaBirdController.cs`, `NinjaCharacter.cs`
+- **Criado via código:**
+  - Menu ninja com botões Jogar e Escolher Ninja
+  - Seleção de personagem: Naruto, Sasuke, Sakura (física diferente)
+  - Jogo com obstáculos bamboo e background com animação de pulso
+  - HUD: pontuação, recorde, Game Over com retry
+  - High Score salvo via PlayerPrefs
+  - Reutiliza `PipeSpawner.cs` e `PipeMove.cs` do Flappy Bird
+
+### 7. Jogo da Velha (Cena: `TicTacToe`) ✅
 
 Jogo da Velha completo com IA.
 
@@ -268,7 +285,8 @@ As seguintes cenas devem estar registradas no Build Profiles:
 3. `Watch`
 4. `VideoPlayer`
 5. `FlappyBird`
-6. `TicTacToe`
+6. `FlappyNinja`
+7. `TicTacToe`
 
 ### Tags Customizadas (ProjectSettings/TagManager.asset)
 - `Obstacle` — Canos e bordas do Flappy Bird
@@ -322,6 +340,15 @@ PIPE_COLOR = #95E1D3
 ---
 
 ## Changelog
+
+### 2026-03-08 — Flappy Ninja
+- Criado jogo Flappy Ninja com `FlappyNinjaSetup.cs`, `NinjaBirdController.cs`, `NinjaCharacter.cs`.
+- 3 personagens jogáveis: Naruto, Sasuke, Sakura (cada um com física diferente).
+- Tela de seleção de personagem, menu ninja, Game Over.
+- Background com animação de pulso (scale).
+- Reutiliza PipeSpawner/PipeMove do Flappy Bird.
+- Card Flappy Ninja desbloqueado na tela Play.
+- Build Profiles agora com 7 cenas.
 
 ### 2026-03-07 — Telas Play e Watch
 - Criada cena `Play` com `PlaySetup.cs` — hub de seleção de jogos com cards.
