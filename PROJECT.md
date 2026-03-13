@@ -58,6 +58,17 @@ MainMenu (Home)
 - Organizada em categorias via **tabs**: `Animes` e `Filmes`.
 - Os vídeos são listados em um grid com **thumbnail**, **título** e **duração**.
 - Ao clicar em um vídeo, abre o player em tela cheia.
+
+---
+
+## Technical PWA Fidelity (Unity UI)
+
+Para garantir que o app Unity seja *pixel-perfect* em relação à sua origem web (o PWA React), as seguintes regras foram estabelecidas para a construção de telas via código (`Setup.cs`):
+
+1. **Aspect Ratio e Backgrounds**: Imagens de fundo usam `AspectRatioFitter` (em modo `EnvelopeParent`) para emular o comportamento do CSS `background-size: cover`, evitando distorções.
+2. **Rounded Corners Dinâmicos**: Como o Unity não possui `border-radius` nativo, os cantos arredondados (ex: botões pilula) devem ser gerados programaticamente em memória construindo uma `Texture2D` com cantos transparentes e fatiada (`Sprite.Create(..., SpriteMeshType.FullRect,, Vector4)`).
+3. **Gradientes em Código**: Gradientes CSS (ex: `linear-gradient`) são replicados através de um componente customizado `UIGradient` que herda de `BaseMeshEffect` e interpola a cor dos vértices (`vh.SetUIVertex`) no eixo Y.
+4. **Layout Constraints Rigorosos**: Layouts flexíveis (`VerticalLayoutGroup`) exigem que componentes filhos de tamanho fixo possuam seus próprios `LayoutElement` com max/preferred bounds rigorosos para evitar o alongamento de tela cheia (`childControlWidth = false`).
 - **Origem dos vídeos:** Hospedados na Hostinger (hospedagem tradicional), consumidos via URL direta (MP4).
 - Funcionalidade de **transmitir para TV** (cast) é desejável.
 
