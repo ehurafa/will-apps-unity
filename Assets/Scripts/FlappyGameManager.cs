@@ -1,5 +1,5 @@
-using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
 using TMPro;
 
@@ -45,7 +45,8 @@ public class FlappyGameManager : MonoBehaviour
 
         if (!isGameStarted)
         {
-            if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+            // New Input System tap to start
+            if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
             {
                 StartGame();
             }

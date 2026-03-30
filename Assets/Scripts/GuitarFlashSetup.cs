@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
 using System.Collections.Generic;
 
@@ -635,11 +636,13 @@ public class GuitarFlashSetup : MonoBehaviour
 
     private void HandleInput()
     {
-        // Keyboard input (for testing in Editor)
-        if (Input.GetKeyDown(KeyCode.D) || Input.GetKeyDown(KeyCode.LeftArrow)) OnLaneHit(0);
-        if (Input.GetKeyDown(KeyCode.F) || Input.GetKeyDown(KeyCode.DownArrow)) OnLaneHit(1);
-        if (Input.GetKeyDown(KeyCode.J) || Input.GetKeyDown(KeyCode.UpArrow)) OnLaneHit(2);
-        if (Input.GetKeyDown(KeyCode.K) || Input.GetKeyDown(KeyCode.RightArrow)) OnLaneHit(3);
+        // Keyboard input (New Input System)
+        if (Keyboard.current == null) return;
+
+        if (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame) OnLaneHit(0);
+        if (Keyboard.current.fKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame) OnLaneHit(1);
+        if (Keyboard.current.jKey.wasPressedThisFrame || Keyboard.current.upArrowKey.wasPressedThisFrame) OnLaneHit(2);
+        if (Keyboard.current.kKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame) OnLaneHit(3);
     }
 
     private void OnLaneHit(int lane)

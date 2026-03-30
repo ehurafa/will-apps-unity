@@ -172,19 +172,21 @@ Assets/
 │   ├── VideoPlayerSetup.cs    ✅ Setup: Player de Vídeo
 │   ├── FlappyBirdSetup.cs     ✅ Setup: Flappy Bird
 │   ├── BirdController.cs      ✅ Física do pássaro
-│   ├── FlappyNinjaSetup.cs    ✅ Setup: Flappy Ninja
-│   ├── NinjaBirdController.cs ✅ Física do ninja
+│   ├── FlappyNinjaSetup.cs    ✅ Setup: Flappy Ninja (PWA-match)
+│   ├── NinjaBirdController.cs ✅ Física do ninja + SFX callbacks
 │   ├── NinjaCharacter.cs      ✅ Dados dos personagens
 │   ├── GuitarFlashSetup.cs    ✅ Setup: Guitar Flash
 │   ├── SongDatabase.cs        ✅ Músicas e beatmaps
 │   ├── NoteController.cs      ✅ Nota caindo
 │   ├── RhythmScoreManager.cs  ✅ Score/combo/rank
-│   ├── PipeSpawner.cs         ✅ Gera canos/bamboo
+│   ├── PipeSpawner.cs         ✅ Gera canos/bamboo (cor customizável)
 │   ├── PipeMove.cs            ✅ Move canos
 │   ├── FlappyGameManager.cs   ✅ Estado do jogo, pontuação
 │   └── TicTacToeSetup.cs      ✅ Setup: Jogo da Velha completo
 ├── Resources/
-│   └── Audio/GuitarFlash/     🎵 Arquivos de música (.mp3/.ogg)
+│   ├── Audio/GuitarFlash/     🎵 Músicas do Guitar Flash
+│   ├── Audio/FlappyNinja/     🎵 theme.mp3, jump.wav, collision.mp3, sharingan.mp3
+│   └── Images/FlappyNinja/    🖼️ konoha.png, sprite-naruto.png
 ├── Settings/
 └── TextMesh Pro/
 ```
@@ -257,16 +259,18 @@ Jogo Flappy Bird completo com física 2D.
   - UI: Pontuação, Recorde, Tela Inicial, Game Over com Restart
   - High Score salvo via PlayerPrefs
 
-### 6. Flappy Ninja (Cena: `FlappyNinja`) ✅
+### 6. Flappy Ninja (Cena: `FlappyNinja`) ✅ — PWA-Match
 
-Variação do Flappy Bird com tema Naruto.
+Variação do Flappy Bird com tema Naruto, réplica fiel da versão PWA.
 
 - **Scripts:** `FlappyNinjaSetup.cs`, `NinjaBirdController.cs`, `NinjaCharacter.cs`
+- **Assets:** `konoha.png` (background), `sprite-naruto.png` (spritesheet 2x2)
+- **Áudio:** `theme.mp3` (loop), `jump.wav`, `collision.mp3`, `sharingan.mp3` (score)
 - **Criado via código:**
-  - Menu ninja com botões Jogar e Escolher Ninja
-  - Seleção de personagem: Naruto, Sasuke, Sakura (física diferente)
-  - Jogo com obstáculos bamboo e background com animação de pulso
-  - HUD: pontuação, recorde, Game Over com retry
+  - Menu: gradiente céu azul, Naruto flutuando, "FLAPPY NINJA" laranja, botão "INICIAR MISSÃO"
+  - Gameplay: background Konoha com pulse animation, Naruto sprite-sheet animado (4 frames), pipes bamboo verdes, score branco centrado
+  - Game Over: overlay escuro, "FIM DE JOGO" vermelho, card com pontuação dourada + melhor score, botões "TENTAR DE NOVO" / "MENU"
+  - Áudio integrado: música tema em loop, SFX pulo/colisão/score
   - High Score salvo via PlayerPrefs
   - Reutiliza `PipeSpawner.cs` e `PipeMove.cs` do Flappy Bird
 
@@ -343,6 +347,12 @@ As seguintes cenas devem estar registradas no Build Profiles:
 - `Ground` — Chão
 - `ScoreTrigger` — Trigger invisível entre os canos para contar pontos
 
+### Input System (New)
+O projeto utiliza o **Input System Package** (com active input handling set to "Input System Package (New)").
+- Todos os scripts usam `UnityEngine.InputSystem`.
+- Clique/Toque é detectado via `Pointer.current.press.wasPressedThisFrame`.
+- Teclado é detectado via `Keyboard.current`.
+
 ---
 
 ## Referência: App Original (PWA)
@@ -390,6 +400,13 @@ PIPE_COLOR = #95E1D3
 ---
 
 ## Changelog
+
+### 2026-03-29 — Flappy Ninja (PWA-Match Rewrite)
+- Reescrito `FlappyNinjaSetup.cs` — réplica fiel do PWA: menu com gradiente céu, Naruto flutuando, background Konoha com pulse, sprite-sheet animado, pipes bamboo verdes, 4 áudios (`jump.wav`, `score.wav`, `death.wav`, `music.mp3`).
+- Renomeado `UIGradient` para `WillAppsUIGradient` no `MainMenuSetup.cs` para evitar conflitos de nome.
+- **Migração para New Input System:** Todos os scripts de jogo (`BirdController`, `NinjaBirdController`, `FlappyGameManager`, `GuitarFlashSetup`) foram migrados de `UnityEngine.Input` para `UnityEngine.InputSystem`.
+- Adicionado campo `pipeColor` em `PipeSpawner.cs` para cor customizável.
+- Copiados assets: `konoha.png`, `sprite-naruto.png`, `theme.mp3`, `jump.wav`, `collision.mp3`, `sharingan.mp3`.
 
 ### 2026-03-08 — Guitar Flash (FFT Beat Detection)
 - Criado `BeatDetector.cs` — análise FFT offline com detecção de onset em 4 bandas de frequência.

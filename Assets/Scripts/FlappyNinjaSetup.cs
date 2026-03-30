@@ -1,30 +1,35 @@
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using UnityEngine.InputSystem;
 using TMPro;
 
 /// <summary>
 /// Attach this script to the Main Camera in the FlappyNinja scene.
-/// Creates the entire Flappy Ninja game programmatically:
-/// Menu → Character Select → Game → Game Over.
+/// Replicates the PWA Flappy Ninja game with:
+/// - Menu with gradient sky, floating Naruto, "INICIAR MISSÃO"
+/// - Gameplay with konoha.png background, sprite-sheet Naruto, bamboo pipes, audio
+/// - Game Over with "FIM DE JOGO", score card, retry/menu buttons
 /// </summary>
 public class FlappyNinjaSetup : MonoBehaviour
 {
-    // Naruto theme colors
-    private readonly Color bgColor = new Color(0.133f, 0.133f, 0.133f, 1f);     // #222
-    private readonly Color skyTop = new Color(0.31f, 0.765f, 0.969f, 1f);       // #4FC3F7
-    private readonly Color skyBottom = new Color(0.882f, 0.961f, 0.996f, 1f);   // #E1F5FE
-    private readonly Color groundColor = new Color(0.365f, 0.251f, 0.216f, 1f); // #5D4037
-    private readonly Color grassColor = new Color(0.22f, 0.557f, 0.235f, 1f);   // #388E3C
-    private readonly Color bambooColor = new Color(0.459f, 0.757f, 0.302f, 1f); // #75C24D
-    private readonly Color bambooEdge = new Color(0.18f, 0.49f, 0.196f, 1f);    // #2E7D32
-    private readonly Color goldColor = new Color(1f, 0.843f, 0f, 1f);           // #FFD700
-    private readonly Color uiBgColor = new Color(0.13f, 0.13f, 0.13f, 0.9f);
+    // PWA Colors
+    private readonly Color bgDark = new Color(0.133f, 0.133f, 0.133f, 1f);       // #222
+    private readonly Color skyTop = new Color(0.31f, 0.765f, 0.969f, 1f);        // #4FC3F7 → #87CEEB
+    private readonly Color skyBottom = new Color(0.882f, 0.961f, 0.996f, 1f);    // #E1F5FE → #E0F7FA
+    private readonly Color ninjaOrange = new Color(1f, 0.42f, 0.208f, 1f);       // #FF6B35
+    private readonly Color ninjaOrangeShadow = new Color(0.702f, 0.278f, 0.125f, 1f); // #b34720
+    private readonly Color groundColor = new Color(0.365f, 0.251f, 0.216f, 1f);  // #5D4037
+    private readonly Color grassColor = new Color(0.22f, 0.557f, 0.235f, 1f);    // #388E3C
+    private readonly Color goldColor = new Color(1f, 0.843f, 0f, 1f);            // #FFD700
+    private readonly Color crimsonColor = new Color(0.863f, 0.078f, 0.235f, 1f); // #DC143C
+    private readonly Color greenBtn = new Color(0.133f, 0.545f, 0.133f, 1f);     // #228B22
+    private readonly Color grayBtn = new Color(0.4f, 0.4f, 0.4f, 1f);            // #666
+    private readonly Color cardBg = new Color(0.2f, 0.2f, 0.2f, 1f);             // #333
 
     // Game state
-    private enum GameScreen { Menu, CharacterSelect, Playing, GameOver }
+    private enum GameScreen { Menu, Playing, GameOver }
     private GameScreen currentScreen = GameScreen.Menu;
-    private NinjaCharacter selectedCharacter;
     private int score = 0;
     private int highScore = 0;
     private bool isGameStarted = false;
@@ -37,28 +42,49 @@ public class FlappyNinjaSetup : MonoBehaviour
 
     // UI panels
     private GameObject menuPanel;
-    private GameObject charSelectPanel;
     private GameObject gameUI;
     private GameObject gameOverPanel;
     private Canvas mainCanvas;
 
     // Game UI refs
     private TextMeshProUGUI scoreText;
-    private TextMeshProUGUI highScoreText;
     private TextMeshProUGUI goScoreText;
-    private TextMeshProUGUI newRecordText;
+    private TextMeshProUGUI goHighScoreText;
     private TextMeshProUGUI startHintText;
 
-    // Background animation
+    // Background
     private Transform bgTransform;
     private float bgPulseTime = 0f;
 
+    // Menu floating animation
+    private RectTransform menuNarutoRect;
+    private float menuFloatTime = 0f;
+
+    // Sprite sheet animation
+    private SpriteRenderer ninjaRenderer;
+    private Sprite[] narutoFrames;
+    private int currentFrame = 0;
+    private float frameTimer = 0f;
+    private const float FRAME_DURATION = 0.1f; // 100ms per frame
+
+    // Audio
+    private AudioSource musicSource;
+    private AudioSource sfxSource;
+    private AudioClip jumpClip;
+    private AudioClip collisionClip;
+    private AudioClip scoreClip;
+    private AudioClip themeClip;
+
+    // Konoha background sprite
+    private Sprite konohaBgSprite;
+
     private void Start()
     {
-        selectedCharacter = NinjaCharacter.Naruto;
         highScore = PlayerPrefs.GetInt("FlappyNinjaHighScore", 0);
 
+        LoadAssets();
         SetupCamera();
+        SetupAudio();
         CreateBackground();
         CreateGameWorld();
         CreateUI();
@@ -67,18 +93,38 @@ public class FlappyNinjaSetup : MonoBehaviour
 
     private void Update()
     {
-        // Background pulse animation
-        if (bgTransform != null)
+        // Background pulse animation (during gameplay)
+        if (bgTransform != null && currentScreen == GameScreen.Playing)
         {
             bgPulseTime += Time.deltaTime;
-            float scale = 1.0f + ((Mathf.Sin(bgPulseTime) + 1f) / 2f) * 0.03f;
-            bgTransform.localScale = new Vector3(scale, scale, 1f);
+            float scale = 1.0f + ((Mathf.Sin(bgPulseTime) + 1f) / 2f) * 0.05f;
+            bgTransform.localScale = new Vector3(scale * 20f, scale * 12f, 1f);
         }
 
-        // Handle "tap to start" during Playing screen
+        // Menu floating animation
+        if (menuNarutoRect != null && currentScreen == GameScreen.Menu)
+        {
+            menuFloatTime += Time.deltaTime * 3f;
+            float offsetY = Mathf.Sin(menuFloatTime) * 20f;
+            menuNarutoRect.anchoredPosition = new Vector2(0, 100 + offsetY);
+        }
+
+        // Sprite sheet animation during gameplay
+        if (isGameStarted && narutoFrames != null && narutoFrames.Length > 0 && ninjaRenderer != null)
+        {
+            frameTimer += Time.deltaTime;
+            if (frameTimer >= FRAME_DURATION)
+            {
+                frameTimer = 0f;
+                currentFrame = (currentFrame + 1) % narutoFrames.Length;
+                ninjaRenderer.sprite = narutoFrames[currentFrame];
+            }
+        }
+
+        // Handle "tap to start" during Playing screen (New Input System)
         if (currentScreen == GameScreen.Playing && !isGameStarted)
         {
-            if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+            if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
             {
                 StartPlaying();
             }
@@ -91,44 +137,119 @@ public class FlappyNinjaSetup : MonoBehaviour
         }
     }
 
+    // ========== LOADING ==========
+
+    private void LoadAssets()
+    {
+        // Load konoha background
+        Texture2D konohaTex = Resources.Load<Texture2D>("Images/FlappyNinja/konoha");
+        if (konohaTex != null)
+        {
+            konohaBgSprite = Sprite.Create(konohaTex,
+                new Rect(0, 0, konohaTex.width, konohaTex.height),
+                new Vector2(0.5f, 0.5f), 100f);
+        }
+
+        // Load naruto sprite sheet (2x2 grid)
+        Texture2D narutoTex = Resources.Load<Texture2D>("Images/FlappyNinja/sprite-naruto");
+        if (narutoTex != null)
+        {
+            int cols = 2, rows = 2;
+            int fw = narutoTex.width / cols;
+            int fh = narutoTex.height / rows;
+            narutoFrames = new Sprite[4];
+
+            for (int r = 0; r < rows; r++)
+            {
+                for (int c = 0; c < cols; c++)
+                {
+                    int index = r * cols + c;
+                    // Unity texture coordinates: bottom-left origin, so flip Y
+                    int y = (rows - 1 - r) * fh;
+                    narutoFrames[index] = Sprite.Create(narutoTex,
+                        new Rect(c * fw, y, fw, fh),
+                        new Vector2(0.5f, 0.5f), fw);
+                }
+            }
+        }
+
+        // Load audio clips
+        themeClip = Resources.Load<AudioClip>("Audio/FlappyNinja/theme");
+        jumpClip = Resources.Load<AudioClip>("Audio/FlappyNinja/jump");
+        collisionClip = Resources.Load<AudioClip>("Audio/FlappyNinja/collision");
+        scoreClip = Resources.Load<AudioClip>("Audio/FlappyNinja/sharingan");
+    }
+
     // ========== SETUP ==========
 
     private void SetupCamera()
     {
         Camera cam = Camera.main;
-        cam.backgroundColor = skyTop;
+        cam.backgroundColor = bgDark;
         cam.orthographic = true;
         cam.orthographicSize = 5f;
     }
 
+    private void SetupAudio()
+    {
+        // Music source (looping)
+        GameObject musicObj = new GameObject("MusicSource");
+        musicSource = musicObj.AddComponent<AudioSource>();
+        musicSource.clip = themeClip;
+        musicSource.loop = true;
+        musicSource.volume = 0.5f;
+        musicSource.playOnAwake = false;
+
+        // SFX source
+        GameObject sfxObj = new GameObject("SFXSource");
+        sfxSource = sfxObj.AddComponent<AudioSource>();
+        sfxSource.playOnAwake = false;
+    }
+
+    private void PlaySFX(AudioClip clip)
+    {
+        if (clip != null && sfxSource != null)
+        {
+            sfxSource.PlayOneShot(clip);
+        }
+    }
+
     private void CreateBackground()
     {
-        // Sky gradient (using a simple colored quad)
+        // Konoha background (used during gameplay)
         GameObject bg = new GameObject("Background");
-        bg.transform.position = new Vector3(0, 0, 5f); // Behind everything
+        bg.transform.position = new Vector3(0, 0, 5f);
         SpriteRenderer bgSr = bg.AddComponent<SpriteRenderer>();
-        bgSr.sprite = CreateSquareSprite();
-        bgSr.color = skyTop;
-        bg.transform.localScale = new Vector3(20f, 12f, 1f);
         bgSr.sortingOrder = -10;
+
+        if (konohaBgSprite != null)
+        {
+            bgSr.sprite = konohaBgSprite;
+        }
+        else
+        {
+            bgSr.sprite = CreateSquareSprite();
+            bgSr.color = skyTop;
+        }
+        bg.transform.localScale = new Vector3(20f, 12f, 1f);
         bgTransform = bg.transform;
 
         // Ground visual
         GameObject ground = new GameObject("GroundVisual");
-        ground.transform.position = new Vector3(0, -5.2f, 0);
+        ground.transform.position = new Vector3(0, -4.7f, 0);
         SpriteRenderer groundSr = ground.AddComponent<SpriteRenderer>();
         groundSr.sprite = CreateSquareSprite();
         groundSr.color = groundColor;
-        ground.transform.localScale = new Vector3(30f, 1f, 1f);
+        ground.transform.localScale = new Vector3(30f, 0.6f, 1f);
         groundSr.sortingOrder = 5;
 
         // Grass strip
         GameObject grass = new GameObject("Grass");
-        grass.transform.position = new Vector3(0, -4.75f, 0);
+        grass.transform.position = new Vector3(0, -4.42f, 0);
         SpriteRenderer grassSr = grass.AddComponent<SpriteRenderer>();
         grassSr.sprite = CreateSquareSprite();
         grassSr.color = grassColor;
-        grass.transform.localScale = new Vector3(30f, 0.15f, 1f);
+        grass.transform.localScale = new Vector3(30f, 0.1f, 1f);
         grassSr.sortingOrder = 6;
     }
 
@@ -136,18 +257,27 @@ public class FlappyNinjaSetup : MonoBehaviour
     {
         // Boundaries
         CreateBoundary("TopBoundary", new Vector3(0, 5.5f, 0), new Vector2(30f, 1f));
-        CreateBoundary("BottomBoundary", new Vector3(0, -5.5f, 0), new Vector2(30f, 1f));
+        CreateBoundary("BottomBoundary", new Vector3(0, -5.0f, 0), new Vector2(30f, 1f));
 
-        // Ninja (bird)
+        // Ninja (hero)
         ninjaObj = new GameObject("Ninja");
         ninjaObj.transform.position = new Vector3(-2f, 0f, 0f);
         ninjaObj.tag = "Player";
 
-        SpriteRenderer sr = ninjaObj.AddComponent<SpriteRenderer>();
-        sr.sprite = CreateCircleSprite();
-        sr.color = selectedCharacter.color;
-        sr.sortingOrder = 10;
-        ninjaObj.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
+        ninjaRenderer = ninjaObj.AddComponent<SpriteRenderer>();
+        ninjaRenderer.sortingOrder = 10;
+
+        if (narutoFrames != null && narutoFrames.Length > 0)
+        {
+            ninjaRenderer.sprite = narutoFrames[0];
+            ninjaObj.transform.localScale = new Vector3(1.3f, 1.3f, 1f);
+        }
+        else
+        {
+            ninjaRenderer.sprite = CreateCircleSprite();
+            ninjaRenderer.color = ninjaOrange;
+            ninjaObj.transform.localScale = new Vector3(0.7f, 0.7f, 1f);
+        }
 
         Rigidbody2D rb = ninjaObj.AddComponent<Rigidbody2D>();
         rb.gravityScale = 0f;
@@ -155,15 +285,16 @@ public class FlappyNinjaSetup : MonoBehaviour
         rb.freezeRotation = true;
 
         CircleCollider2D col = ninjaObj.AddComponent<CircleCollider2D>();
-        col.radius = 0.4f;
+        col.radius = 0.3f;
 
         ninjaController = ninjaObj.AddComponent<NinjaBirdController>();
-        ninjaController.SetCharacter(selectedCharacter);
+        ninjaController.SetCharacter(NinjaCharacter.Naruto);
         ninjaController.OnDied += OnNinjaDied;
+        ninjaController.OnJumped += () => PlaySFX(jumpClip);
 
         ninjaObj.SetActive(false);
 
-        // Pipe Spawner (reuses PipeSpawner from Flappy Bird but with bamboo colors)
+        // Pipe Spawner with bamboo colors
         pipeSpawnerObj = new GameObject("PipeSpawner");
         pipeSpawner = pipeSpawnerObj.AddComponent<PipeSpawner>();
         pipeSpawner.spawnInterval = 1.8f;
@@ -172,6 +303,7 @@ public class FlappyNinjaSetup : MonoBehaviour
         pipeSpawner.spawnX = 10f;
         pipeSpawner.minY = -1.5f;
         pipeSpawner.maxY = 2f;
+        pipeSpawner.pipeColor = new Color(0.459f, 0.757f, 0.302f, 1f); // #75C24D
     }
 
     private void CreateBoundary(string name, Vector3 position, Vector2 size)
@@ -214,206 +346,96 @@ public class FlappyNinjaSetup : MonoBehaviour
         }
 
         CreateMenuPanel(canvasObj.transform);
-        CreateCharSelectPanel(canvasObj.transform);
         CreateGameUI(canvasObj.transform);
         CreateGameOverPanel(canvasObj.transform);
     }
 
-    // --- Menu Panel ---
+    // --- Menu Panel (PWA MainMenu style) ---
     private void CreateMenuPanel(Transform parent)
     {
-        menuPanel = CreateFullOverlay(parent, "MenuPanel", uiBgColor);
+        menuPanel = CreateFullOverlay(parent, "MenuPanel", Color.clear);
 
-        VerticalLayoutGroup vlg = menuPanel.AddComponent<VerticalLayoutGroup>();
+        // Gradient sky background image
+        GameObject skyBg = new GameObject("SkyGradient");
+        skyBg.transform.SetParent(menuPanel.transform, false);
+        RectTransform skyRect = skyBg.AddComponent<RectTransform>();
+        skyRect.anchorMin = Vector2.zero;
+        skyRect.anchorMax = Vector2.one;
+        skyRect.offsetMin = Vector2.zero;
+        skyRect.offsetMax = Vector2.zero;
+        Image skyImg = skyBg.AddComponent<Image>();
+        skyImg.color = skyTop;
+        // Add gradient effect
+        WillAppsUIGradient gradient = skyBg.AddComponent<WillAppsUIGradient>();
+        gradient.Color1 = skyTop;
+        gradient.Color2 = skyBottom;
+
+        // Content layout
+        GameObject content = new GameObject("Content");
+        content.transform.SetParent(menuPanel.transform, false);
+        RectTransform contentRect = content.AddComponent<RectTransform>();
+        contentRect.anchorMin = Vector2.zero;
+        contentRect.anchorMax = Vector2.one;
+        contentRect.offsetMin = Vector2.zero;
+        contentRect.offsetMax = Vector2.zero;
+
+        VerticalLayoutGroup vlg = content.AddComponent<VerticalLayoutGroup>();
         vlg.childAlignment = TextAnchor.MiddleCenter;
-        vlg.spacing = 30;
+        vlg.spacing = 20;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.padding = new RectOffset(80, 80, 0, 0);
 
-        // Ninja emoji
-        CreateText(menuPanel.transform, "NinjaIcon", "\ud83e\udd77", 100, Color.white);
+        // Floating Naruto sprite
+        GameObject narutoImg = new GameObject("NarutoSprite");
+        narutoImg.transform.SetParent(content.transform, false);
+        menuNarutoRect = narutoImg.AddComponent<RectTransform>();
+        menuNarutoRect.sizeDelta = new Vector2(200, 160);
+        LayoutElement narutoLE = narutoImg.AddComponent<LayoutElement>();
+        narutoLE.preferredHeight = 160;
 
-        // Title
-        TextMeshProUGUI title = CreateText(menuPanel.transform, "Title", "FLAPPY NINJA", 64, goldColor);
+        if (narutoFrames != null && narutoFrames.Length > 0)
+        {
+            Image narutoImage = narutoImg.AddComponent<Image>();
+            narutoImage.sprite = narutoFrames[0];
+            narutoImage.preserveAspect = true;
+        }
+        else
+        {
+            // Fallback emoji
+            TextMeshProUGUI emojiText = narutoImg.AddComponent<TextMeshProUGUI>();
+            emojiText.text = "\ud83e\udd77";
+            emojiText.fontSize = 100;
+            emojiText.alignment = TextAlignmentOptions.Center;
+        }
+
+        // Title "FLAPPY NINJA"
+        TextMeshProUGUI title = CreateText(content.transform, "Title", "FLAPPY NINJA", 72, ninjaOrange);
         title.fontStyle = FontStyles.Bold;
+        // (text shadow simulated via outline)
+        title.outlineWidth = 0.3f;
+        title.outlineColor = Color.black;
 
-        // Subtitle
-        CreateText(menuPanel.transform, "Subtitle", "Tema Naruto", 32, new Color(1f, 1f, 1f, 0.6f));
+        CreateSpacer(content.transform, 40);
 
-        CreateSpacer(menuPanel.transform, 40);
-
-        // Play button
-        CreateActionButton(menuPanel.transform, "\u25b6  JOGAR", selectedCharacter.color, () =>
+        // "INICIAR MISSÃO" button (PWA style: orange bg, black border, shadow)
+        CreateStyledButton(content.transform, "INICIAR MISSÃO", ninjaOrange, ninjaOrangeShadow, () =>
         {
             ShowScreen(GameScreen.Playing);
         });
 
-        // Character select button
-        CreateActionButton(menuPanel.transform, "\ud83e\udd77  ESCOLHER NINJA", new Color(0.33f, 0.33f, 0.33f, 1f), () =>
-        {
-            ShowScreen(GameScreen.CharacterSelect);
-        });
+        CreateSpacer(content.transform, 10);
 
-        CreateSpacer(menuPanel.transform, 20);
-
-        // Back to Play menu
-        CreateActionButton(menuPanel.transform, "\u2190  VOLTAR", new Color(0.2f, 0.2f, 0.2f, 1f), () =>
+        // Back button
+        CreateStyledButton(content.transform, "← VOLTAR", grayBtn, new Color(0.25f, 0.25f, 0.25f, 1f), () =>
         {
             SceneManager.LoadScene("Play");
         });
 
+        CreateSpacer(content.transform, 20);
+
         // High score
-        CreateText(menuPanel.transform, "HighScoreMenu", "Recorde: " + highScore, 28, new Color(1f, 1f, 1f, 0.4f));
-    }
-
-    // --- Character Select Panel ---
-    private void CreateCharSelectPanel(Transform parent)
-    {
-        charSelectPanel = CreateFullOverlay(parent, "CharSelectPanel", new Color(0, 0, 0, 0.95f));
-
-        VerticalLayoutGroup vlg = charSelectPanel.AddComponent<VerticalLayoutGroup>();
-        vlg.childAlignment = TextAnchor.MiddleCenter;
-        vlg.spacing = 25;
-        vlg.childControlWidth = true;
-        vlg.childControlHeight = false;
-        vlg.padding = new RectOffset(60, 60, 0, 0);
-
-        // Title
-        TextMeshProUGUI title = CreateText(charSelectPanel.transform, "Title", "ESCOLHA SEU NINJA", 48, goldColor);
-        title.fontStyle = FontStyles.Bold;
-
-        CreateSpacer(charSelectPanel.transform, 20);
-
-        // Character cards
-        foreach (var character in NinjaCharacter.All)
-        {
-            CreateCharacterCard(charSelectPanel.transform, character);
-        }
-
-        CreateSpacer(charSelectPanel.transform, 30);
-
-        // Back button
-        CreateActionButton(charSelectPanel.transform, "VOLTAR", new Color(0.4f, 0.4f, 0.4f, 1f), () =>
-        {
-            ShowScreen(GameScreen.Menu);
-        });
-    }
-
-    private void CreateCharacterCard(Transform parent, NinjaCharacter character)
-    {
-        GameObject card = new GameObject("Card_" + character.id);
-        card.transform.SetParent(parent, false);
-        RectTransform rect = card.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(800, 140);
-
-        LayoutElement le = card.AddComponent<LayoutElement>();
-        le.preferredHeight = 140;
-
-        Image cardBg = card.AddComponent<Image>();
-        cardBg.color = new Color(0.2f, 0.2f, 0.2f, 1f);
-
-        Button btn = card.AddComponent<Button>();
-        string capturedId = character.id;
-        NinjaCharacter capturedChar = character;
-        btn.onClick.AddListener(() =>
-        {
-            SelectCharacter(capturedChar);
-        });
-
-        HorizontalLayoutGroup hlg = card.AddComponent<HorizontalLayoutGroup>();
-        hlg.childAlignment = TextAnchor.MiddleLeft;
-        hlg.spacing = 20;
-        hlg.padding = new RectOffset(20, 20, 10, 10);
-        hlg.childControlWidth = false;
-        hlg.childControlHeight = true;
-        hlg.childForceExpandWidth = false;
-
-        // Color circle
-        GameObject circle = new GameObject("ColorCircle");
-        circle.transform.SetParent(card.transform, false);
-        RectTransform circleRect = circle.AddComponent<RectTransform>();
-        circleRect.sizeDelta = new Vector2(80, 80);
-        LayoutElement circleLE = circle.AddComponent<LayoutElement>();
-        circleLE.preferredWidth = 80;
-
-        Image circleImg = circle.AddComponent<Image>();
-        circleImg.color = character.color;
-        // Make it round-ish
-        circleImg.type = Image.Type.Simple;
-
-        // Info
-        GameObject info = new GameObject("Info");
-        info.transform.SetParent(card.transform, false);
-        RectTransform infoRect = info.AddComponent<RectTransform>();
-        infoRect.sizeDelta = new Vector2(400, 100);
-        LayoutElement infoLE = info.AddComponent<LayoutElement>();
-        infoLE.preferredWidth = 400;
-        infoLE.flexibleWidth = 1;
-
-        VerticalLayoutGroup infoVlg = info.AddComponent<VerticalLayoutGroup>();
-        infoVlg.childAlignment = TextAnchor.MiddleLeft;
-        infoVlg.spacing = 5;
-        infoVlg.childControlWidth = true;
-        infoVlg.childControlHeight = false;
-
-        // Name
-        GameObject nameObj = new GameObject("Name");
-        nameObj.transform.SetParent(info.transform, false);
-        nameObj.AddComponent<RectTransform>().sizeDelta = new Vector2(350, 40);
-        TextMeshProUGUI nameText = nameObj.AddComponent<TextMeshProUGUI>();
-        nameText.text = character.name;
-        nameText.fontSize = 34;
-        nameText.fontStyle = FontStyles.Bold;
-        nameText.color = Color.white;
-        nameText.alignment = TextAlignmentOptions.MidlineLeft;
-
-        // Stats
-        string statsStr = $"Pulo: {character.jumpForce:F1}  |  Gravidade: {character.gravityScale:F1}";
-        GameObject statsObj = new GameObject("Stats");
-        statsObj.transform.SetParent(info.transform, false);
-        statsObj.AddComponent<RectTransform>().sizeDelta = new Vector2(350, 30);
-        TextMeshProUGUI statsText = statsObj.AddComponent<TextMeshProUGUI>();
-        statsText.text = statsStr;
-        statsText.fontSize = 22;
-        statsText.color = new Color(1f, 1f, 1f, 0.5f);
-        statsText.alignment = TextAlignmentOptions.MidlineLeft;
-
-        // Selected badge
-        if (character.id == selectedCharacter.id)
-        {
-            GameObject selectedBadge = new GameObject("SelectedBadge");
-            selectedBadge.transform.SetParent(card.transform, false);
-            RectTransform badgeRect = selectedBadge.AddComponent<RectTransform>();
-            badgeRect.sizeDelta = new Vector2(160, 50);
-            LayoutElement badgeLE = selectedBadge.AddComponent<LayoutElement>();
-            badgeLE.preferredWidth = 160;
-
-            Image badgeBg = selectedBadge.AddComponent<Image>();
-            badgeBg.color = goldColor;
-
-            GameObject badgeTextObj = new GameObject("Text");
-            badgeTextObj.transform.SetParent(selectedBadge.transform, false);
-            RectTransform btRect = badgeTextObj.AddComponent<RectTransform>();
-            btRect.anchorMin = Vector2.zero;
-            btRect.anchorMax = Vector2.one;
-            btRect.offsetMin = Vector2.zero;
-            btRect.offsetMax = Vector2.zero;
-            TextMeshProUGUI badgeText = badgeTextObj.AddComponent<TextMeshProUGUI>();
-            badgeText.text = "\u2713";
-            badgeText.fontSize = 30;
-            badgeText.fontStyle = FontStyles.Bold;
-            badgeText.color = Color.black;
-            badgeText.alignment = TextAlignmentOptions.Center;
-        }
-
-        // Border if selected
-        if (character.id == selectedCharacter.id)
-        {
-            Outline outline = card.AddComponent<Outline>();
-            outline.effectColor = goldColor;
-            outline.effectDistance = new Vector2(3, 3);
-        }
+        CreateText(content.transform, "HighScoreMenu", "Recorde: " + highScore, 28, new Color(0.3f, 0.3f, 0.3f, 1f));
     }
 
     // --- Game UI (HUD) ---
@@ -427,101 +449,133 @@ public class FlappyNinjaSetup : MonoBehaviour
         guiRect.offsetMin = Vector2.zero;
         guiRect.offsetMax = Vector2.zero;
 
-        // Top HUD
-        GameObject topHud = new GameObject("TopHUD");
-        topHud.transform.SetParent(gameUI.transform, false);
-        RectTransform topRect = topHud.AddComponent<RectTransform>();
-        topRect.anchorMin = new Vector2(0, 1);
-        topRect.anchorMax = new Vector2(1, 1);
-        topRect.pivot = new Vector2(0.5f, 1);
-        topRect.sizeDelta = new Vector2(0, 200);
-
-        VerticalLayoutGroup topVlg = topHud.AddComponent<VerticalLayoutGroup>();
-        topVlg.childAlignment = TextAnchor.UpperCenter;
-        topVlg.spacing = 10;
-        topVlg.padding = new RectOffset(0, 0, 40, 0);
-        topVlg.childControlWidth = true;
-        topVlg.childControlHeight = false;
-
-        scoreText = CreateText(topHud.transform, "ScoreText", "0", 100, Color.white);
+        // Score text (centered top, large white, like PWA)
+        scoreText = CreateText(gameUI.transform, "ScoreText", "0", 100, Color.white);
         scoreText.fontStyle = FontStyles.Bold;
+        RectTransform scoreRect = scoreText.GetComponent<RectTransform>();
+        scoreRect.anchorMin = new Vector2(0.5f, 1);
+        scoreRect.anchorMax = new Vector2(0.5f, 1);
+        scoreRect.pivot = new Vector2(0.5f, 1);
+        scoreRect.anchoredPosition = new Vector2(0, -60);
+        scoreRect.sizeDelta = new Vector2(400, 120);
 
-        highScoreText = CreateText(topHud.transform, "HighScoreText", "Recorde: " + highScore, 32, new Color(1, 1, 1, 0.6f));
-
-        // Back button (top-left)
+        // Back button (top-left circle like PWA)
         GameObject backBtn = new GameObject("Btn_Back");
         backBtn.transform.SetParent(gameUI.transform, false);
         RectTransform backRect = backBtn.AddComponent<RectTransform>();
         backRect.anchorMin = new Vector2(0, 1);
         backRect.anchorMax = new Vector2(0, 1);
         backRect.pivot = new Vector2(0, 1);
-        backRect.anchoredPosition = new Vector2(20, -20);
-        backRect.sizeDelta = new Vector2(100, 100);
+        backRect.anchoredPosition = new Vector2(30, -30);
+        backRect.sizeDelta = new Vector2(90, 90);
 
         Image backImg = backBtn.AddComponent<Image>();
-        backImg.color = new Color(0, 0, 0, 0.4f);
+        backImg.color = new Color(0, 0, 0, 0.5f);
 
         Button backButton = backBtn.AddComponent<Button>();
-        backButton.onClick.AddListener(() => ShowScreen(GameScreen.Menu));
+        backButton.onClick.AddListener(() =>
+        {
+            StopMusic();
+            SceneManager.LoadScene("Play");
+        });
 
-        TextMeshProUGUI backText = CreateText(backBtn.transform, "BackIcon", "\u2190", 50, Color.white);
-        RectTransform btRect = backText.GetComponent<RectTransform>();
-        btRect.anchorMin = Vector2.zero;
-        btRect.anchorMax = Vector2.one;
-        btRect.offsetMin = Vector2.zero;
-        btRect.offsetMax = Vector2.zero;
+        TextMeshProUGUI backText = CreateChildText(backBtn.transform, "✕", 40, Color.white);
 
         // Start hint
         startHintText = CreateText(gameUI.transform, "StartHint", "Toque para começar!", 50, goldColor);
+        startHintText.fontStyle = FontStyles.Bold;
         RectTransform hintRect = startHintText.GetComponent<RectTransform>();
         hintRect.anchorMin = new Vector2(0.5f, 0.5f);
         hintRect.anchorMax = new Vector2(0.5f, 0.5f);
         hintRect.sizeDelta = new Vector2(900, 80);
     }
 
-    // --- Game Over Panel ---
+    // --- Game Over Panel (PWA GameOver style) ---
     private void CreateGameOverPanel(Transform parent)
     {
-        gameOverPanel = CreateFullOverlay(parent, "GameOverPanel", new Color(0, 0, 0, 0.85f));
+        gameOverPanel = CreateFullOverlay(parent, "GameOverPanel", new Color(0, 0, 0, 0.8f));
 
         VerticalLayoutGroup vlg = gameOverPanel.AddComponent<VerticalLayoutGroup>();
         vlg.childAlignment = TextAnchor.MiddleCenter;
-        vlg.spacing = 25;
+        vlg.spacing = 20;
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
         vlg.padding = new RectOffset(80, 80, 0, 0);
 
-        // Game Over title
-        TextMeshProUGUI goTitle = CreateText(gameOverPanel.transform, "GOTitle", "Game Over!", 60, new Color(1f, 0.42f, 0.42f, 1f));
+        // "FIM DE JOGO" title (crimson, 48px)
+        TextMeshProUGUI goTitle = CreateText(gameOverPanel.transform, "GOTitle", "FIM DE JOGO", 72, crimsonColor);
         goTitle.fontStyle = FontStyles.Bold;
 
-        // Score
-        goScoreText = CreateText(gameOverPanel.transform, "GOScore", "Pontuação: 0", 40, Color.white);
+        CreateSpacer(gameOverPanel.transform, 10);
 
-        // New Record
-        newRecordText = CreateText(gameOverPanel.transform, "NewRecord", "\ud83c\udfc6 Novo Recorde!", 36, goldColor);
-        newRecordText.gameObject.SetActive(false);
+        // Score card (dark card #333 with rounded corners)
+        GameObject card = new GameObject("ScoreCard");
+        card.transform.SetParent(gameOverPanel.transform, false);
+        RectTransform cardRect = card.AddComponent<RectTransform>();
+        cardRect.sizeDelta = new Vector2(600, 280);
+        LayoutElement cardLE = card.AddComponent<LayoutElement>();
+        cardLE.preferredHeight = 280;
+
+        Image cardBgImg = card.AddComponent<Image>();
+        cardBgImg.color = cardBg;
+
+        VerticalLayoutGroup cardVlg = card.AddComponent<VerticalLayoutGroup>();
+        cardVlg.childAlignment = TextAnchor.MiddleCenter;
+        cardVlg.spacing = 10;
+        cardVlg.padding = new RectOffset(30, 30, 30, 30);
+        cardVlg.childControlWidth = true;
+        cardVlg.childControlHeight = false;
+
+        // "Pontuação" label
+        CreateText(card.transform, "ScoreLabel", "Pontuação", 36, Color.white);
+
+        // Score value (gold, large)
+        goScoreText = CreateText(card.transform, "ScoreValue", "0", 80, goldColor);
+        goScoreText.fontStyle = FontStyles.Bold;
+
+        // Divider
+        GameObject divider = new GameObject("Divider");
+        divider.transform.SetParent(card.transform, false);
+        RectTransform divRect = divider.AddComponent<RectTransform>();
+        divRect.sizeDelta = new Vector2(500, 2);
+        LayoutElement divLE = divider.AddComponent<LayoutElement>();
+        divLE.preferredHeight = 2;
+        Image divImg = divider.AddComponent<Image>();
+        divImg.color = new Color(0.333f, 0.333f, 0.333f, 1f); // #555
+
+        // High score
+        goHighScoreText = CreateText(card.transform, "HighScoreValue", "Melhor: 0", 30, new Color(0.667f, 0.667f, 0.667f, 1f));
 
         CreateSpacer(gameOverPanel.transform, 20);
 
-        // Retry
-        CreateActionButton(gameOverPanel.transform, "Jogar Novamente", selectedCharacter.color, () =>
+        // Buttons row
+        GameObject btnRow = new GameObject("ButtonRow");
+        btnRow.transform.SetParent(gameOverPanel.transform, false);
+        RectTransform btnRowRect = btnRow.AddComponent<RectTransform>();
+        btnRowRect.sizeDelta = new Vector2(700, 100);
+        LayoutElement btnRowLE = btnRow.AddComponent<LayoutElement>();
+        btnRowLE.preferredHeight = 100;
+
+        HorizontalLayoutGroup hlg = btnRow.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment = TextAnchor.MiddleCenter;
+        hlg.spacing = 30;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = true;
+        hlg.childForceExpandWidth = false;
+
+        // "TENTAR DE NOVO" button (green)
+        CreateActionButton(btnRow.transform, "TENTAR DE NOVO", greenBtn, 330, () =>
         {
             RestartGame();
             ShowScreen(GameScreen.Playing);
         });
 
-        // Menu
-        CreateActionButton(gameOverPanel.transform, "Menu", new Color(0.2f, 0.2f, 0.2f, 1f), () =>
+        // "MENU" button (gray)
+        CreateActionButton(btnRow.transform, "MENU", grayBtn, 200, () =>
         {
+            StopMusic();
             RestartGame();
             ShowScreen(GameScreen.Menu);
-        });
-
-        // Back to Play
-        CreateActionButton(gameOverPanel.transform, "Sair", new Color(0.15f, 0.15f, 0.15f, 1f), () =>
-        {
-            SceneManager.LoadScene("Play");
         });
     }
 
@@ -532,36 +586,23 @@ public class FlappyNinjaSetup : MonoBehaviour
         currentScreen = screen;
 
         menuPanel.SetActive(screen == GameScreen.Menu);
-        charSelectPanel.SetActive(screen == GameScreen.CharacterSelect);
         gameUI.SetActive(screen == GameScreen.Playing || screen == GameScreen.GameOver);
         gameOverPanel.SetActive(screen == GameScreen.GameOver);
 
-        if (screen == GameScreen.Playing)
+        if (screen == GameScreen.Menu)
+        {
+            StopMusic();
+            ninjaObj.SetActive(false);
+            // Update high score text on menu
+            TextMeshProUGUI hsText = menuPanel.GetComponentInChildren<TextMeshProUGUI>();
+        }
+        else if (screen == GameScreen.Playing)
         {
             PrepareGame();
         }
-        else
+        else if (screen == GameScreen.GameOver)
         {
-            ninjaObj.SetActive(false);
-        }
-    }
-
-    private void SelectCharacter(NinjaCharacter character)
-    {
-        selectedCharacter = character;
-
-        // Rebuild char select panel to show updated selection
-        if (charSelectPanel != null)
-        {
-            Destroy(charSelectPanel);
-            CreateCharSelectPanel(mainCanvas.transform);
-            charSelectPanel.SetActive(true);
-        }
-
-        // Update ninja visuals
-        if (ninjaController != null)
-        {
-            ninjaController.SetCharacter(selectedCharacter);
+            // Keep ninja visible but frozen
         }
     }
 
@@ -573,8 +614,16 @@ public class FlappyNinjaSetup : MonoBehaviour
 
         // Reset ninja
         ninjaObj.SetActive(true);
-        ninjaController.SetCharacter(selectedCharacter);
+        ninjaController.SetCharacter(NinjaCharacter.Naruto);
         ninjaController.ResetNinja(new Vector2(-2f, 0f));
+
+        // Reset sprite
+        if (narutoFrames != null && narutoFrames.Length > 0 && ninjaRenderer != null)
+        {
+            currentFrame = 0;
+            frameTimer = 0f;
+            ninjaRenderer.sprite = narutoFrames[0];
+        }
 
         // Show start hint
         if (startHintText != null) startHintText.gameObject.SetActive(true);
@@ -583,6 +632,13 @@ public class FlappyNinjaSetup : MonoBehaviour
         foreach (var pipe in FindObjectsByType<PipeMove>(FindObjectsSortMode.None))
         {
             Destroy(pipe.gameObject);
+        }
+
+        // Start music
+        if (musicSource != null && themeClip != null)
+        {
+            musicSource.clip = themeClip;
+            musicSource.Play();
         }
     }
 
@@ -601,22 +657,31 @@ public class FlappyNinjaSetup : MonoBehaviour
 
         if (pipeSpawner != null) pipeSpawner.StopSpawning();
 
+        // Stop music and play collision
+        StopMusic();
+        PlaySFX(collisionClip);
+
         // Check high score
-        bool isNewRecord = false;
         if (score > highScore)
         {
             highScore = score;
             PlayerPrefs.SetInt("FlappyNinjaHighScore", highScore);
             PlayerPrefs.Save();
-            isNewRecord = true;
         }
 
-        // Show game over
-        if (goScoreText != null) goScoreText.text = "Pontuação: " + score;
-        if (newRecordText != null) newRecordText.gameObject.SetActive(isNewRecord && score > 0);
+        // Update game over UI
+        if (goScoreText != null) goScoreText.text = score.ToString();
+        if (goHighScoreText != null) goHighScoreText.text = "Melhor: " + highScore;
 
-        UpdateScoreUI();
         ShowScreen(GameScreen.GameOver);
+    }
+
+    private void StopMusic()
+    {
+        if (musicSource != null && musicSource.isPlaying)
+        {
+            musicSource.Stop();
+        }
     }
 
     private void RestartGame()
@@ -631,41 +696,21 @@ public class FlappyNinjaSetup : MonoBehaviour
         score = 0;
     }
 
-    // Score trigger detection — called from NinjaBirdController via OnTriggerEnter2D
-    // We override the detection here using a separate approach
-    private void OnEnable()
-    {
-        // Register a score listener
-        InvokeRepeating(nameof(CheckScoreTriggers), 0.1f, 0.1f);
-    }
-
-    private void OnDisable()
-    {
-        CancelInvoke(nameof(CheckScoreTriggers));
-    }
-
-    private void CheckScoreTriggers()
-    {
-        // Score triggers are handled by NinjaBirdController's OnTriggerEnter2D
-        // We just need to count destroyed triggers. Instead, let's use a different approach:
-        // Listen for trigger events via the ninja controller.
-    }
-
-    // Public method for score - the NinjaBirdController calls FindAnyObjectByType to find this
+    // Public method for score - called by NinjaBirdController via FindAnyObjectByType
     public void AddScore()
     {
         if (!isGameStarted) return;
         score++;
         UpdateScoreUI();
+        PlaySFX(scoreClip);
     }
 
     private void UpdateScoreUI()
     {
         if (scoreText != null) scoreText.text = score.ToString();
-        if (highScoreText != null) highScoreText.text = "Recorde: " + highScore;
     }
 
-    // ========== HELPERS ==========
+    // ========== UI HELPERS ==========
 
     private GameObject CreateFullOverlay(Transform parent, string name, Color color)
     {
@@ -688,7 +733,9 @@ public class FlappyNinjaSetup : MonoBehaviour
         GameObject obj = new GameObject(name);
         obj.transform.SetParent(parent, false);
         RectTransform rect = obj.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(900, fontSize + 20);
+        rect.sizeDelta = new Vector2(900, fontSize + 30);
+        LayoutElement le = obj.AddComponent<LayoutElement>();
+        le.preferredHeight = fontSize + 30;
 
         TextMeshProUGUI text = obj.AddComponent<TextMeshProUGUI>();
         text.text = content;
@@ -699,15 +746,85 @@ public class FlappyNinjaSetup : MonoBehaviour
         return text;
     }
 
-    private void CreateActionButton(Transform parent, string label, Color bgColor, System.Action onClick)
+    private TextMeshProUGUI CreateChildText(Transform parent, string content, int fontSize, Color color)
+    {
+        GameObject obj = new GameObject("Text");
+        obj.transform.SetParent(parent, false);
+        RectTransform rect = obj.AddComponent<RectTransform>();
+        rect.anchorMin = Vector2.zero;
+        rect.anchorMax = Vector2.one;
+        rect.offsetMin = Vector2.zero;
+        rect.offsetMax = Vector2.zero;
+
+        TextMeshProUGUI text = obj.AddComponent<TextMeshProUGUI>();
+        text.text = content;
+        text.fontSize = fontSize;
+        text.color = color;
+        text.alignment = TextAlignmentOptions.Center;
+        return text;
+    }
+
+    private void CreateStyledButton(Transform parent, string label, Color bgColor, Color shadowColor, System.Action onClick)
+    {
+        // Button with shadow effect (PWA style: box-shadow bottom)
+        GameObject btnContainer = new GameObject("BtnContainer_" + label.Replace(" ", ""));
+        btnContainer.transform.SetParent(parent, false);
+        RectTransform containerRect = btnContainer.AddComponent<RectTransform>();
+        containerRect.sizeDelta = new Vector2(600, 110);
+        LayoutElement containerLE = btnContainer.AddComponent<LayoutElement>();
+        containerLE.preferredHeight = 110;
+
+        // Shadow (offset below)
+        GameObject shadow = new GameObject("Shadow");
+        shadow.transform.SetParent(btnContainer.transform, false);
+        RectTransform shadowRect = shadow.AddComponent<RectTransform>();
+        shadowRect.anchorMin = Vector2.zero;
+        shadowRect.anchorMax = Vector2.one;
+        shadowRect.offsetMin = new Vector2(0, -8);
+        shadowRect.offsetMax = new Vector2(0, -8);
+        Image shadowImg = shadow.AddComponent<Image>();
+        shadowImg.color = shadowColor;
+
+        // Main button
+        GameObject btnObj = new GameObject("Btn_" + label.Replace(" ", ""));
+        btnObj.transform.SetParent(btnContainer.transform, false);
+        RectTransform btnRect = btnObj.AddComponent<RectTransform>();
+        btnRect.anchorMin = Vector2.zero;
+        btnRect.anchorMax = Vector2.one;
+        btnRect.offsetMin = Vector2.zero;
+        btnRect.offsetMax = Vector2.zero;
+
+        Image btnImg = btnObj.AddComponent<Image>();
+        btnImg.color = bgColor;
+
+        // Black border effect via outline
+        Outline outline = btnObj.AddComponent<Outline>();
+        outline.effectColor = Color.black;
+        outline.effectDistance = new Vector2(3, 3);
+
+        Button btn = btnObj.AddComponent<Button>();
+        ColorBlock colors = btn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+        colors.pressedColor = new Color(0.7f, 0.7f, 0.7f, 1f);
+        btn.colors = colors;
+        btn.onClick.AddListener(() => onClick());
+
+        // Label
+        TextMeshProUGUI text = CreateChildText(btnObj.transform, label, 36, Color.white);
+        text.fontStyle = FontStyles.Bold;
+    }
+
+    private void CreateActionButton(Transform parent, string label, Color bgColor, float width, System.Action onClick)
     {
         GameObject btnObj = new GameObject("Btn_" + label.Replace(" ", ""));
         btnObj.transform.SetParent(parent, false);
         RectTransform rect = btnObj.AddComponent<RectTransform>();
-        rect.sizeDelta = new Vector2(700, 100);
+        rect.sizeDelta = new Vector2(width, 90);
 
         LayoutElement le = btnObj.AddComponent<LayoutElement>();
-        le.preferredHeight = 100;
+        le.preferredWidth = width;
+        le.preferredHeight = 90;
 
         Image img = btnObj.AddComponent<Image>();
         img.color = bgColor;
@@ -720,20 +837,8 @@ public class FlappyNinjaSetup : MonoBehaviour
         btn.colors = colors;
         btn.onClick.AddListener(() => onClick());
 
-        GameObject labelObj = new GameObject("Label");
-        labelObj.transform.SetParent(btnObj.transform, false);
-        RectTransform lRect = labelObj.AddComponent<RectTransform>();
-        lRect.anchorMin = Vector2.zero;
-        lRect.anchorMax = Vector2.one;
-        lRect.offsetMin = Vector2.zero;
-        lRect.offsetMax = Vector2.zero;
-
-        TextMeshProUGUI text = labelObj.AddComponent<TextMeshProUGUI>();
-        text.text = label;
-        text.fontSize = 36;
+        TextMeshProUGUI text = CreateChildText(btnObj.transform, label, 30, Color.white);
         text.fontStyle = FontStyles.Bold;
-        text.color = Color.white;
-        text.alignment = TextAlignmentOptions.Center;
     }
 
     private void CreateSpacer(Transform parent, float height)
@@ -746,6 +851,8 @@ public class FlappyNinjaSetup : MonoBehaviour
         le.minHeight = height;
         le.preferredHeight = height;
     }
+
+    // ========== SPRITE CREATION ==========
 
     private Sprite CreateCircleSprite()
     {
@@ -779,3 +886,5 @@ public class FlappyNinjaSetup : MonoBehaviour
         return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4);
     }
 }
+
+// WillAppsUIGradient is defined in MainMenuSetup.cs — reused here for sky gradient

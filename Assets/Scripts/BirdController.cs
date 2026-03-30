@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Controls the bird physics: jump on touch/click, rotation based on velocity.
@@ -38,8 +39,8 @@ public class BirdController : MonoBehaviour
     {
         if (isDead) return;
 
-        // Jump on touch or click
-        if (Input.GetMouseButtonDown(0) || Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began)
+        // Jump on touch or click (New Input System)
+        if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
         {
             Jump();
         }

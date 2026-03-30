@@ -11,6 +11,7 @@ public class PipeSpawner : MonoBehaviour
     public float spawnX = 10f;
     public float minY = -2f;
     public float maxY = 2f;
+    public Color pipeColor = Color.clear; // If set, overrides default pipe color
 
     private float timer = 0f;
     private bool isSpawning = false;
@@ -79,7 +80,7 @@ public class PipeSpawner : MonoBehaviour
 
         SpriteRenderer sr = pipe.AddComponent<SpriteRenderer>();
         sr.sprite = CreateSquareSprite();
-        sr.color = new Color(0.584f, 0.882f, 0.827f, 1f); // #95E1D3
+        sr.color = (pipeColor != Color.clear) ? pipeColor : new Color(0.584f, 0.882f, 0.827f, 1f); // Custom or #95E1D3
 
         BoxCollider2D col = pipe.AddComponent<BoxCollider2D>();
 

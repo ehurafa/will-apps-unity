@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.InputSystem;
 
 /// <summary>
 /// Controls the ninja bird physics: jump, rotation, death.
@@ -18,6 +19,7 @@ public class NinjaBirdController : MonoBehaviour
     private bool isActive = false;
 
     public System.Action OnDied;
+    public System.Action OnJumped;
 
     public void SetCharacter(NinjaCharacter character)
     {
@@ -44,8 +46,8 @@ public class NinjaBirdController : MonoBehaviour
     {
         if (isDead || !isActive) return;
 
-        // Jump on touch or click
-        if (Input.GetMouseButtonDown(0) || (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began))
+        // Jump on touch or click (New Input System)
+        if (Pointer.current != null && Pointer.current.press.wasPressedThisFrame)
         {
             Jump();
         }
@@ -63,6 +65,7 @@ public class NinjaBirdController : MonoBehaviour
     {
         if (isDead || !isActive) return;
         rb.linearVelocity = new Vector2(rb.linearVelocity.x, jumpForce);
+        OnJumped?.Invoke();
     }
 
     public void EnablePhysics()

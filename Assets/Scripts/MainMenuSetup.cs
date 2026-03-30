@@ -244,7 +244,7 @@ public class MainMenuSetup : MonoBehaviour
         mask.showMaskGraphic = true;
 
         // Gradient
-        UIGradient gradient = btnObj.AddComponent<UIGradient>();
+        WillAppsUIGradient gradient = btnObj.AddComponent<WillAppsUIGradient>();
         gradient.Color1 = gradTop;
         gradient.Color2 = gradBottom;
 
@@ -376,7 +376,7 @@ public class MainMenuSetup : MonoBehaviour
 /// Simple helper component to apply a vertical Linear Gradient to a UI Image.
 /// </summary>
 [RequireComponent(typeof(Graphic))]
-public class UIGradient : BaseMeshEffect
+public class WillAppsUIGradient : BaseMeshEffect
 {
     public Color Color1 = Color.white;
     public Color Color2 = Color.black;
