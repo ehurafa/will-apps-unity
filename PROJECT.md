@@ -401,6 +401,11 @@ PIPE_COLOR = #95E1D3
 
 ## Changelog
 
+### 2026-04-04 — Correções e Configurações
+- **Bug Fix:** Restaurada diretiva `using UnityEngine;` em `FlappyGameManager.cs` (corrigido erro de compilação CS0246).
+- **Build Settings:** Registrada a cena `FlappyNinja.unity` no `EditorBuildSettings.asset`, permitindo o carregamento do jogo via menu.
+- **Input System:** Verificação de integridade nos scripts migrados para o New Input System.
+
 ### 2026-03-29 — Flappy Ninja (PWA-Match Rewrite)
 - Reescrito `FlappyNinjaSetup.cs` — réplica fiel do PWA: menu com gradiente céu, Naruto flutuando, background Konoha com pulse, sprite-sheet animado, pipes bamboo verdes, 4 áudios (`jump.wav`, `score.wav`, `death.wav`, `music.mp3`).
 - Renomeado `UIGradient` para `WillAppsUIGradient` no `MainMenuSetup.cs` para evitar conflitos de nome.
