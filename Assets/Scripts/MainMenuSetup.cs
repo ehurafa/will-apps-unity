@@ -19,11 +19,15 @@ public class MainMenuSetup : MonoBehaviour
     private readonly Color overlayColor = new Color(0.102f, 0.102f, 0.18f, 0.85f); 
 
     private Sprite roundedSpriteCache;
+    private Sprite playSpriteCache;
+    private Sprite starSpriteCache;
 
     private void Start()
     {
-        // Pre-generate a rounded sprite in memory to guarantee we have pill/rounded corners
+        // Pre-generate assets
         roundedSpriteCache = CreateRoundedSprite(128, 128, 32); 
+        playSpriteCache = CreatePlaySprite(128, 128);
+        starSpriteCache = CreateStarSprite(128, 128);
         
         SetupCamera();
         CreateUI();
@@ -150,10 +154,10 @@ public class MainMenuSetup : MonoBehaviour
         // Let's use simple shapes or letters to avoid "square" emoji missing fonts.
         // PWA uses standard images/emojis. If emojis broke in play mode, lets try simple characters or image loading later
         // But for now, using unicode Play (►) and Star (★) as fallback.
-        CreatePWAButton(buttonsObj.transform, "Btn_Assistir", "►", "ASSISTIR", "Animes e Filmes",
+        CreatePWAButton(buttonsObj.transform, "Btn_Assistir", playSpriteCache, "ASSISTIR", "Animes e Filmes",
             primaryTop, primaryBottom, () => SceneManager.LoadScene("Watch"));
 
-        CreatePWAButton(buttonsObj.transform, "Btn_Jogar", "★", "JOGAR", "Jogos Divertidos",
+        CreatePWAButton(buttonsObj.transform, "Btn_Jogar", starSpriteCache, "JOGAR", "Jogos Divertidos",
             secondaryTop, secondaryBottom, () => SceneManager.LoadScene("Play"));
 
         // Bottom spacer
@@ -218,7 +222,7 @@ public class MainMenuSetup : MonoBehaviour
         text.alignment = TextAlignmentOptions.Top;
     }
 
-    private void CreatePWAButton(Transform parent, string goName, string icon, string title, string subTxt,
+    private void CreatePWAButton(Transform parent, string goName, Sprite iconSprite, string title, string subTxt,
         Color gradTop, Color gradBottom, System.Action onClick)
     {
         GameObject btnObj = new GameObject(goName);
@@ -282,15 +286,15 @@ public class MainMenuSetup : MonoBehaviour
         vlg.childControlWidth = true;
         vlg.childControlHeight = true; 
 
-        // 1. Icon (unicode text)
+        // 1. Icon (Image instead of font character to avoid "missing icon" blocks)
         GameObject iconObj = new GameObject("Icon");
         iconObj.transform.SetParent(contentGroup.transform, false);
-        TextMeshProUGUI iconText = iconObj.AddComponent<TextMeshProUGUI>();
-        iconText.text = icon;
-        iconText.fontSize = 90; 
-        iconText.color = Color.white;
-        iconText.alignment = TextAlignmentOptions.Bottom; 
-
+        RectTransform iconRect = iconObj.AddComponent<RectTransform>();
+        iconRect.sizeDelta = new Vector2(100, 100);
+        Image iconImg = iconObj.AddComponent<Image>();
+        iconImg.sprite = iconSprite;
+        iconImg.color = Color.white;
+        iconImg.preserveAspect = true;
         // 2. Title label
         GameObject titleObj = new GameObject("Title");
         titleObj.transform.SetParent(contentGroup.transform, false);
@@ -369,6 +373,72 @@ public class MainMenuSetup : MonoBehaviour
 
         // Slice borders so it scales like UI cards
         return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f), 100, 0, SpriteMeshType.FullRect, new Vector4(radius, radius, radius, radius));
+    }
+ 
+    private Sprite CreatePlaySprite(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+ 
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                // Triangle math: x from 0 to width, y symmetrical around height/2
+                float normalizedX = (float)x / width;
+                float halfHeight = height / 2f;
+                float limitY = halfHeight * normalizedX;
+ 
+                if (Mathf.Abs(y - halfHeight) <= limitY)
+                    pixels[y * width + x] = white;
+                else
+                    pixels[y * width + x] = transparent;
+            }
+        }
+        texture.SetPixels(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+    }
+ 
+    private Sprite CreateStarSprite(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+ 
+        float centerX = width / 2f;
+        float centerY = height / 2f;
+        float outerRadius = width * 0.45f;
+        float innerRadius = width * 0.2f;
+        int points = 5;
+ 
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float dx = x - centerX;
+                float dy = y - centerY;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                float angle = Mathf.Atan2(dy, dx) * Mathf.Rad2Deg;
+ 
+                // Star shape logic
+                float anglePerPoint = 360f / points;
+                float halfAngle = anglePerPoint / 2f;
+                float localAngle = (angle + 90f + 360f) % anglePerPoint;
+                
+                float r = (localAngle < halfAngle) ? 
+                    Mathf.Lerp(outerRadius, innerRadius, localAngle / halfAngle) :
+                    Mathf.Lerp(innerRadius, outerRadius, (localAngle - halfAngle) / halfAngle);
+ 
+                pixels[y * width + x] = (dist <= r) ? white : transparent;
+            }
+        }
+        texture.SetPixels(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 }
 

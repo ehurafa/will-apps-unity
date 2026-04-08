@@ -401,6 +401,10 @@ PIPE_COLOR = #95E1D3
 
 ## Changelog
 
+### 2026-04-08 — UI Polish
+- **Bug Fix:** Resolvida falha de ícones ausentes (quadrados vazios) no menu principal.
+- **Refatoração UI:** Substituídos ícones de texto Unicode por sprites (Play e Estrela) gerados programaticamente em tempo de execução no `MainMenuSetup.cs`.
+
 ### 2026-04-04 — Correções e Configurações
 - **Bug Fix:** Restaurada diretiva `using UnityEngine;` em `FlappyGameManager.cs` (corrigido erro de compilação CS0246).
 - **Build Settings:** Registrada a cena `FlappyNinja.unity` no `EditorBuildSettings.asset`, permitindo o carregamento do jogo via menu.
