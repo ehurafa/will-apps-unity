@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
@@ -33,6 +34,8 @@ public class FlappyNinjaSetup : MonoBehaviour
     private int score = 0;
     private int highScore = 0;
     private bool isGameStarted = false;
+    private NinjaCharacter selectedCharacter = NinjaCharacter.Naruto;
+    private readonly Dictionary<string, Image> characterButtonImages = new Dictionary<string, Image>();
 
     // Game objects
     private GameObject ninjaObj;
@@ -51,6 +54,7 @@ public class FlappyNinjaSetup : MonoBehaviour
     private TextMeshProUGUI goScoreText;
     private TextMeshProUGUI goHighScoreText;
     private TextMeshProUGUI startHintText;
+    private TextMeshProUGUI menuHighScoreText;
 
     // Background
     private Transform bgTransform;
@@ -434,8 +438,13 @@ public class FlappyNinjaSetup : MonoBehaviour
 
         CreateSpacer(content.transform, 20);
 
+        // Character selection
+        CreateText(content.transform, "ChooseLabel", "Escolha seu ninja", 30, Color.white);
+        CreateCharacterSelectionRow(content.transform);
+        CreateSpacer(content.transform, 20);
+
         // High score
-        CreateText(content.transform, "HighScoreMenu", "Recorde: " + highScore, 28, new Color(0.3f, 0.3f, 0.3f, 1f));
+        menuHighScoreText = CreateText(content.transform, "HighScoreMenu", "Recorde: " + highScore, 28, new Color(0.3f, 0.3f, 0.3f, 1f));
     }
 
     // --- Game UI (HUD) ---
@@ -593,8 +602,8 @@ public class FlappyNinjaSetup : MonoBehaviour
         {
             StopMusic();
             ninjaObj.SetActive(false);
-            // Update high score text on menu
-            TextMeshProUGUI hsText = menuPanel.GetComponentInChildren<TextMeshProUGUI>();
+            if (menuHighScoreText != null) menuHighScoreText.text = "Recorde: " + highScore;
+            UpdateCharacterSelectionUI();
         }
         else if (screen == GameScreen.Playing)
         {
@@ -614,7 +623,7 @@ public class FlappyNinjaSetup : MonoBehaviour
 
         // Reset ninja
         ninjaObj.SetActive(true);
-        ninjaController.SetCharacter(NinjaCharacter.Naruto);
+        ninjaController.SetCharacter(selectedCharacter);
         ninjaController.ResetNinja(new Vector2(-2f, 0f));
 
         // Reset sprite
@@ -708,6 +717,99 @@ public class FlappyNinjaSetup : MonoBehaviour
     private void UpdateScoreUI()
     {
         if (scoreText != null) scoreText.text = score.ToString();
+    }
+
+    private void SelectCharacter(NinjaCharacter character)
+    {
+        selectedCharacter = character;
+        if (menuHighScoreText != null)
+        {
+            menuHighScoreText.text = "Recorde: " + highScore;
+        }
+        UpdateCharacterSelectionUI();
+    }
+
+    private void UpdateCharacterSelectionUI()
+    {
+        foreach (var kvp in characterButtonImages)
+        {
+            bool selected = kvp.Key == selectedCharacter.id;
+            Image img = kvp.Value;
+            if (img != null)
+            {
+                Color baseColor = GetCharacterById(kvp.Key).color;
+                img.color = selected ? Color.white : baseColor * 0.7f;
+                Outline outline = img.GetComponent<Outline>();
+                if (outline != null)
+                {
+                    outline.effectColor = selected ? ninjaOrange : Color.black;
+                }
+            }
+        }
+    }
+
+    private NinjaCharacter GetCharacterById(string id)
+    {
+        foreach (var character in NinjaCharacter.All)
+        {
+            if (character.id == id) return character;
+        }
+        return NinjaCharacter.Naruto;
+    }
+
+    private Image CreateCharacterButton(Transform parent, NinjaCharacter character)
+    {
+        GameObject btnObj = new GameObject("Btn_" + character.id);
+        btnObj.transform.SetParent(parent, false);
+        RectTransform rect = btnObj.AddComponent<RectTransform>();
+        rect.sizeDelta = new Vector2(260, 90);
+        LayoutElement le = btnObj.AddComponent<LayoutElement>();
+        le.preferredWidth = 260;
+        le.preferredHeight = 90;
+
+        Image img = btnObj.AddComponent<Image>();
+        img.color = selectedCharacter.id == character.id ? Color.white : character.color * 0.7f;
+
+        Outline outline = btnObj.AddComponent<Outline>();
+        outline.effectColor = selectedCharacter.id == character.id ? ninjaOrange : Color.black;
+        outline.effectDistance = new Vector2(2, 2);
+
+        Button btn = btnObj.AddComponent<Button>();
+        ColorBlock colors = btn.colors;
+        colors.normalColor = Color.white;
+        colors.highlightedColor = new Color(0.9f, 0.9f, 0.9f, 1f);
+        colors.pressedColor = new Color(0.75f, 0.75f, 0.75f, 1f);
+        btn.colors = colors;
+        btn.onClick.AddListener(() => SelectCharacter(character));
+
+        TextMeshProUGUI label = CreateChildText(btnObj.transform, character.name, 24, character.color);
+        label.fontStyle = FontStyles.Bold;
+
+        return img;
+    }
+
+    private void CreateCharacterSelectionRow(Transform parent)
+    {
+        GameObject row = new GameObject("CharacterSelectionRow");
+        row.transform.SetParent(parent, false);
+        RectTransform rowRect = row.AddComponent<RectTransform>();
+        rowRect.sizeDelta = new Vector2(900, 120);
+        LayoutElement rowLE = row.AddComponent<LayoutElement>();
+        rowLE.preferredHeight = 120;
+
+        HorizontalLayoutGroup hlg = row.AddComponent<HorizontalLayoutGroup>();
+        hlg.childAlignment = TextAnchor.MiddleCenter;
+        hlg.spacing = 15;
+        hlg.childControlWidth = false;
+        hlg.childControlHeight = false;
+
+        foreach (var character in NinjaCharacter.All)
+        {
+            Image buttonImage = CreateCharacterButton(row.transform, character);
+            characterButtonImages[character.id] = buttonImage;
+        }
+
+        UpdateCharacterSelectionUI();
     }
 
     // ========== UI HELPERS ==========

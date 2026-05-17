@@ -96,10 +96,10 @@ Para garantir que o app Unity seja *pixel-perfect* em relação à sua origem we
 - Botão de **resetar placar** e **jogar novamente**.
 - Detecta empate quando todas as células estão preenchidas.
 
-#### Flappy Ninja (tema Naruto) — Futuro
+#### Flappy Ninja (tema Naruto) — Em implementação
 - Variação do Flappy Bird com tema do anime Naruto.
-- Especificações desejadas:
-  - Escolha de personagem: Naruto, Sasuke ou Sakura.
+- Progresso atual:
+  - Escolha de personagem: Naruto, Sasuke ou Sakura (implementado no menu).
   - Animação ao pular.
   - Sons: fundo (`theme.mp3`), pulo (`jump.mp3`), colisão (`collision.mp3`).
   - Background com leve animação de scale.
@@ -400,6 +400,11 @@ PIPE_COLOR = #95E1D3
 ---
 
 ## Changelog
+
+### 2026-05-16 — Flappy Ninja character selection
+- Adicionada seleção de personagem no menu: Naruto, Sasuke e Sakura.
+- O jogo agora usa o personagem selecionado ao iniciar a partida.
+- Atualização do texto de recorde no menu.
 
 ### 2026-04-08 — UI Polish
 - **Bug Fix:** Resolvida falha de ícones ausentes (quadrados vazios) no menu principal.
