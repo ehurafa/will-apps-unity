@@ -414,7 +414,7 @@ public class WatchSetup : MonoBehaviour
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = Color.white;
         titleText.alignment = TextAlignmentOptions.MidlineLeft;
-        titleText.enableWordWrapping = true;
+        titleText.textWrappingMode = TextWrappingModes.Normal;
         titleText.overflowMode = TextOverflowModes.Ellipsis;
 
         // Duration
