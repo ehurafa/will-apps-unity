@@ -84,8 +84,16 @@ public class WatchSetup : MonoBehaviour
     private TextMeshProUGUI animesTabText;
     private TextMeshProUGUI filmesTabText;
 
+    private Sprite clapperSpriteCache;
+    private Sprite stopwatchSpriteCache;
+    private Sprite playSpriteCache;
+
     private void Start()
     {
+        clapperSpriteCache = CreateClapperboardSprite(128, 128);
+        stopwatchSpriteCache = CreateStopwatchSprite(128, 128);
+        playSpriteCache = CreatePlaySprite(128, 128);
+
         SetupCamera();
         CreateUI();
         RefreshVideoList();
@@ -205,6 +213,19 @@ public class WatchSetup : MonoBehaviour
         CreateIconButton(header.transform, "Btn_Back", "←", 80, 80,
             () => SceneManager.LoadScene("MainMenu"));
 
+        // Clapperboard Icon
+        GameObject clapperIconObj = new GameObject("Icon_Clapperboard");
+        clapperIconObj.transform.SetParent(header.transform, false);
+        RectTransform clapperRect = clapperIconObj.AddComponent<RectTransform>();
+        clapperRect.sizeDelta = new Vector2(60, 60);
+        LayoutElement clapperLE = clapperIconObj.AddComponent<LayoutElement>();
+        clapperLE.preferredWidth = 60;
+        clapperLE.preferredHeight = 60;
+        Image clapperImg = clapperIconObj.AddComponent<Image>();
+        clapperImg.sprite = clapperSpriteCache;
+        clapperImg.color = primaryColor;
+        clapperImg.preserveAspect = true;
+
         // Title
         GameObject titleObj = new GameObject("Title");
         titleObj.transform.SetParent(header.transform, false);
@@ -214,7 +235,7 @@ public class WatchSetup : MonoBehaviour
         titleLE.preferredWidth = 600;
 
         TextMeshProUGUI titleText = titleObj.AddComponent<TextMeshProUGUI>();
-        titleText.text = "\ud83c\udfac  Assistir";
+        titleText.text = "Assistir";
         titleText.fontSize = 48;
         titleText.fontStyle = FontStyles.Bold;
         titleText.color = Color.white;
@@ -379,7 +400,17 @@ public class WatchSetup : MonoBehaviour
         thumbImg.color = new Color(0.15f, 0.15f, 0.25f, 1f);
 
         // Play icon on thumbnail
-        TextMeshProUGUI playIcon = CreateChildText(thumbObj.transform, "▶", 48, new Color(1f, 1f, 1f, 0.6f));
+        GameObject playIconObj = new GameObject("PlayIcon");
+        playIconObj.transform.SetParent(thumbObj.transform, false);
+        RectTransform playIconRect = playIconObj.AddComponent<RectTransform>();
+        playIconRect.anchorMin = new Vector2(0.5f, 0.5f);
+        playIconRect.anchorMax = new Vector2(0.5f, 0.5f);
+        playIconRect.pivot = new Vector2(0.5f, 0.5f);
+        playIconRect.sizeDelta = new Vector2(60, 60);
+        Image playIconImg = playIconObj.AddComponent<Image>();
+        playIconImg.sprite = playSpriteCache;
+        playIconImg.color = new Color(1f, 1f, 1f, 0.6f);
+        playIconImg.preserveAspect = true;
 
         // Try to load thumbnail from URL
         if (!string.IsNullOrEmpty(video.thumbnailUrl))
@@ -424,9 +455,32 @@ public class WatchSetup : MonoBehaviour
             durObj.transform.SetParent(infoObj.transform, false);
             RectTransform durRect = durObj.AddComponent<RectTransform>();
             durRect.sizeDelta = new Vector2(500, 30);
+            LayoutElement durLE = durObj.AddComponent<LayoutElement>();
+            durLE.preferredHeight = 30;
 
-            TextMeshProUGUI durText = durObj.AddComponent<TextMeshProUGUI>();
-            durText.text = "⏱ " + video.duration;
+            HorizontalLayoutGroup durHlg = durObj.AddComponent<HorizontalLayoutGroup>();
+            durHlg.childAlignment = TextAnchor.MiddleLeft;
+            durHlg.spacing = 8;
+            durHlg.childControlWidth = false;
+            durHlg.childControlHeight = false;
+
+            // Timer Icon
+            GameObject timerIconObj = new GameObject("Icon_Timer");
+            timerIconObj.transform.SetParent(durObj.transform, false);
+            RectTransform timerIconRect = timerIconObj.AddComponent<RectTransform>();
+            timerIconRect.sizeDelta = new Vector2(24, 24);
+            Image timerIconImg = timerIconObj.AddComponent<Image>();
+            timerIconImg.sprite = stopwatchSpriteCache;
+            timerIconImg.color = textSecondaryColor;
+            timerIconImg.preserveAspect = true;
+
+            // Duration text
+            GameObject durTextObj = new GameObject("Text");
+            durTextObj.transform.SetParent(durObj.transform, false);
+            RectTransform durTextRect = durTextObj.AddComponent<RectTransform>();
+            durTextRect.sizeDelta = new Vector2(400, 30);
+            TextMeshProUGUI durText = durTextObj.AddComponent<TextMeshProUGUI>();
+            durText.text = video.duration;
             durText.fontSize = 24;
             durText.color = textSecondaryColor;
             durText.alignment = TextAlignmentOptions.MidlineLeft;
@@ -508,5 +562,130 @@ public class WatchSetup : MonoBehaviour
         text.color = color;
         text.alignment = TextAlignmentOptions.Center;
         return text;
+    }
+
+    private Sprite CreatePlaySprite(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float normalizedX = (float)x / width;
+                float halfHeight = height / 2f;
+                float limitY = halfHeight * normalizedX;
+                if (Mathf.Abs(y - halfHeight) <= limitY)
+                    pixels[y * width + x] = white;
+                else
+                    pixels[y * width + x] = transparent;
+            }
+        }
+        texture.SetPixels(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+    }
+
+    private Sprite CreateStopwatchSprite(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+        float centerX = width / 2f;
+        float centerY = height / 2.2f;
+        float outerRadius = width * 0.35f;
+        float innerRadius = width * 0.30f;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float dx = x - centerX;
+                float dy = y - centerY;
+                float dist = Mathf.Sqrt(dx * dx + dy * dy);
+                bool isCircleOutline = (dist >= innerRadius && dist <= outerRadius);
+                bool isTopStem = (x >= centerX - width * 0.06f && x <= centerX + width * 0.06f && 
+                                  y >= centerY + outerRadius && y <= centerY + outerRadius + height * 0.08f);
+                bool isTopCap = (x >= centerX - width * 0.10f && x <= centerX + width * 0.10f && 
+                                 y >= centerY + outerRadius + height * 0.08f && y <= centerY + outerRadius + height * 0.11f);
+                bool isHand = false;
+                if (dist < innerRadius * 0.8f)
+                {
+                    if (dist < width * 0.06f)
+                    {
+                        isHand = true;
+                    }
+                    else
+                    {
+                        if (x >= centerX - width * 0.02f && x <= centerX + width * 0.02f && y >= centerY && y <= centerY + innerRadius * 0.7f)
+                            isHand = true;
+                        if (y >= centerY - height * 0.02f && y <= centerY + height * 0.02f && x >= centerX && x <= centerX + innerRadius * 0.5f)
+                            isHand = true;
+                    }
+                }
+                if (isCircleOutline || isTopStem || isTopCap || isHand)
+                    pixels[y * width + x] = white;
+                else
+                    pixels[y * width + x] = transparent;
+            }
+        }
+        texture.SetPixels(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
+    }
+
+    private Sprite CreateClapperboardSprite(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+        float cx = width / 2f;
+        float cy = height / 2f;
+        float w = width * 0.7f;
+        float h = height * 0.5f;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float dx = x - cx;
+                float dy = y - cy;
+                bool inBody = (Mathf.Abs(dx) <= w / 2f && dy <= 0 && dy >= -h / 2f);
+                float topYMin = 0.05f * height;
+                float topYMax = 0.25f * height;
+                bool inTopStrip = (Mathf.Abs(dx) <= w / 2f && dy >= topYMin && dy <= topYMax);
+                bool isStripe = false;
+                if (inTopStrip)
+                {
+                    int stripeWidth = width / 8;
+                    isStripe = ((int)(x + y * 0.5f) / stripeWidth) % 2 == 0;
+                }
+                bool inPlayTriangle = false;
+                if (inBody)
+                {
+                    float tx = dx + width * 0.05f;
+                    float ty = dy + height * 0.12f;
+                    float triW = width * 0.15f;
+                    float triH = height * 0.15f;
+                    if (tx >= -triW / 2f && tx <= triW / 2f)
+                    {
+                        float limitY = triH * (tx + triW / 2f) / triW;
+                        if (Mathf.Abs(ty) <= limitY)
+                        {
+                            inPlayTriangle = true;
+                        }
+                    }
+                }
+                if ((inBody && !inPlayTriangle) || (inTopStrip && isStripe))
+                    pixels[y * width + x] = white;
+                else
+                    pixels[y * width + x] = transparent;
+            }
+        }
+        texture.SetPixels(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 }

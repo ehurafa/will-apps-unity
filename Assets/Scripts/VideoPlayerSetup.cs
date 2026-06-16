@@ -183,7 +183,7 @@ public class VideoPlayerSetup : MonoBehaviour
         ppLabelRect.offsetMax = Vector2.zero;
 
         playPauseBtnText = ppLabel.AddComponent<TextMeshProUGUI>();
-        playPauseBtnText.text = "⏸  Pausar";
+        playPauseBtnText.text = "PAUSAR";
         playPauseBtnText.fontSize = 32;
         playPauseBtnText.fontStyle = FontStyles.Bold;
         playPauseBtnText.color = Color.white;
@@ -197,13 +197,13 @@ public class VideoPlayerSetup : MonoBehaviour
         if (videoPlayer.isPlaying)
         {
             videoPlayer.Pause();
-            if (playPauseBtnText) playPauseBtnText.text = "▶  Play";
+            if (playPauseBtnText) playPauseBtnText.text = "PLAY";
             if (statusText) statusText.text = "Pausado";
         }
         else
         {
             videoPlayer.Play();
-            if (playPauseBtnText) playPauseBtnText.text = "⏸  Pausar";
+            if (playPauseBtnText) playPauseBtnText.text = "PAUSAR";
             if (statusText) statusText.text = "Reproduzindo...";
         }
     }

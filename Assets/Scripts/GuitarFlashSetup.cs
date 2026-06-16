@@ -80,11 +80,14 @@ public class GuitarFlashSetup : MonoBehaviour
 
     // ========== LIFECYCLE ==========
 
+    private Sprite musicNoteSpriteCache;
+
     private void Start()
     {
         scoreManager = new RhythmScoreManager();
         squareSprite = CreateSquareSprite();
         circleSprite = CreateCircleSprite();
+        musicNoteSpriteCache = CreateMusicNoteSprite(128, 128);
 
         // Auto-discover songs from Resources
         discoveredSongs = SongDatabase.DiscoverSongs();
@@ -207,7 +210,7 @@ public class GuitarFlashSetup : MonoBehaviour
         vlg.padding = new RectOffset(60, 60, 80, 60);
 
         // Header
-        TextMeshProUGUI title = CreateText(songSelectPanel.transform, "Title", "\ud83c\udfb8 GUITAR FLASH", 56, new Color(1f, 0.3f, 0.5f, 1f));
+        TextMeshProUGUI title = CreateText(songSelectPanel.transform, "Title", "GUITAR FLASH", 56, new Color(1f, 0.3f, 0.5f, 1f));
         title.fontStyle = FontStyles.Bold;
 
         CreateText(songSelectPanel.transform, "Subtitle", "Escolha uma música", 30, new Color(1f, 1f, 1f, 0.5f));
@@ -223,7 +226,7 @@ public class GuitarFlashSetup : MonoBehaviour
         CreateSpacer(songSelectPanel.transform, 40);
 
         // Back button
-        CreateActionButton(songSelectPanel.transform, "\u2190  VOLTAR", new Color(0.2f, 0.2f, 0.2f, 1f), () =>
+        CreateActionButton(songSelectPanel.transform, "←  VOLTAR", new Color(0.2f, 0.2f, 0.2f, 1f), () =>
         {
             SceneManager.LoadScene("Play");
         });
@@ -264,8 +267,18 @@ public class GuitarFlashSetup : MonoBehaviour
         vlg.childControlWidth = true;
         vlg.childControlHeight = false;
 
-        // Music note emoji
-        CreateText(card.transform, "Icon", "\ud83c\udfb5", 40, song.accentColor);
+        // Music note icon
+        GameObject iconObj = new GameObject("Icon");
+        iconObj.transform.SetParent(card.transform, false);
+        RectTransform iconRect = iconObj.AddComponent<RectTransform>();
+        iconRect.sizeDelta = new Vector2(50, 50);
+        LayoutElement iconLE = iconObj.AddComponent<LayoutElement>();
+        iconLE.preferredWidth = 50;
+        iconLE.preferredHeight = 50;
+        Image iconImg = iconObj.AddComponent<Image>();
+        iconImg.sprite = musicNoteSpriteCache;
+        iconImg.color = song.accentColor;
+        iconImg.preserveAspect = true;
 
         // Title
         TextMeshProUGUI titleText = CreateText(card.transform, "SongTitle", song.title, 36, Color.white);
@@ -304,21 +317,21 @@ public class GuitarFlashSetup : MonoBehaviour
         CreateSpacer(difficultyPanel.transform, 20);
 
         // Easy
-        CreateActionButton(difficultyPanel.transform, "\u2b50  FÁCIL", new Color(0.2f, 0.8f, 0.4f, 1f), () =>
+        CreateActionButton(difficultyPanel.transform, "★  FÁCIL", new Color(0.2f, 0.8f, 0.4f, 1f), () =>
         {
             selectedDifficulty = 0;
             StartGame();
         });
 
         // Medium
-        CreateActionButton(difficultyPanel.transform, "\u2b50\u2b50  MÉDIO", new Color(1f, 0.6f, 0.2f, 1f), () =>
+        CreateActionButton(difficultyPanel.transform, "★★  MÉDIO", new Color(1f, 0.6f, 0.2f, 1f), () =>
         {
             selectedDifficulty = 1;
             StartGame();
         });
 
         // Hard
-        CreateActionButton(difficultyPanel.transform, "\u2b50\u2b50\u2b50  DIFÍCIL", new Color(1f, 0.2f, 0.3f, 1f), () =>
+        CreateActionButton(difficultyPanel.transform, "★★★  DIFÍCIL", new Color(1f, 0.2f, 0.3f, 1f), () =>
         {
             selectedDifficulty = 2;
             StartGame();
@@ -378,7 +391,7 @@ public class GuitarFlashSetup : MonoBehaviour
         CreateHitZoneUI(gameplayUI.transform);
 
         // Back button
-        GameObject backBtn = CreateSmallButton(gameplayUI.transform, "\u2190",
+        GameObject backBtn = CreateSmallButton(gameplayUI.transform, "←",
             new Vector2(0, 1), new Vector2(0, 1), new Vector2(20, -100),
             () => { StopGame(); ShowScreen(GameScreen.SongSelect); });
     }
@@ -971,5 +984,43 @@ public class GuitarFlashSetup : MonoBehaviour
         tex.SetPixels(pixels);
         tex.Apply();
         return Sprite.Create(tex, new Rect(0, 0, 4, 4), new Vector2(0.5f, 0.5f), 4);
+    }
+
+    private Sprite CreateMusicNoteSprite(int width, int height)
+    {
+        Texture2D texture = new Texture2D(width, height, TextureFormat.RGBA32, false);
+        Color[] pixels = new Color[width * height];
+        Color transparent = new Color(0, 0, 0, 0);
+        Color white = Color.white;
+        float cx = width / 2f;
+        float cy = height / 2f;
+        for (int y = 0; y < height; y++)
+        {
+            for (int x = 0; x < width; x++)
+            {
+                float hCx = cx - width * 0.12f;
+                float hCy = cy - height * 0.18f;
+                float headDist = Mathf.Sqrt((x - hCx) * (x - hCx) + (y - hCy) * (y - hCy) * 0.7f);
+                bool isHead = (headDist <= width * 0.12f);
+                float stemX = hCx + width * 0.09f;
+                bool isStem = (x >= stemX - 2 && x <= stemX + 2 && y >= hCy && y <= cy + height * 0.22f);
+                bool isFlag = false;
+                if (x >= stemX && x <= stemX + width * 0.2f && y <= cy + height * 0.22f && y >= cy + height * 0.05f)
+                {
+                    float dx = x - stemX;
+                    float flagTopY = (cy + height * 0.22f) - dx * 0.4f;
+                    float flagBottomY = flagTopY - height * 0.08f;
+                    if (y >= flagBottomY && y <= flagTopY)
+                        isFlag = true;
+                }
+                if (isHead || isStem || isFlag)
+                    pixels[y * width + x] = white;
+                else
+                    pixels[y * width + x] = transparent;
+            }
+        }
+        texture.SetPixels(pixels);
+        texture.Apply();
+        return Sprite.Create(texture, new Rect(0, 0, width, height), new Vector2(0.5f, 0.5f));
     }
 }

@@ -406,10 +406,10 @@ public class FlappyNinjaSetup : MonoBehaviour
         }
         else
         {
-            // Fallback emoji
+            // Fallback text
             TextMeshProUGUI emojiText = narutoImg.AddComponent<TextMeshProUGUI>();
-            emojiText.text = "\ud83e\udd77";
-            emojiText.fontSize = 100;
+            emojiText.text = "NINJA";
+            emojiText.fontSize = 80;
             emojiText.alignment = TextAlignmentOptions.Center;
         }
 

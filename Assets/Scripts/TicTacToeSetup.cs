@@ -438,8 +438,8 @@ public class TicTacToeSetup : MonoBehaviour
 
         string msg = winner switch
         {
-            "X" => "\ud83c\udf89 Você Venceu!",
-            "O" => "\ud83e\udd16 IA Venceu!",
+            "X" => "Você Venceu!",
+            "O" => "IA Venceu!",
             "draw" => "Empate!",
             _ => ""
         };

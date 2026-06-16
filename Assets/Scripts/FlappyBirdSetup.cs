@@ -204,7 +204,7 @@ public class FlappyBirdSetup : MonoBehaviour
 
         CreateText(gameOverPanel.transform, "GameOverTitle", "Game Over!", 60, new Color(1f, 0.42f, 0.42f, 1f));
         TextMeshProUGUI goScoreText = CreateText(gameOverPanel.transform, "GOScore", "Pontuação: 0", 40, Color.white);
-        TextMeshProUGUI newRecordText = CreateText(gameOverPanel.transform, "NewRecord", "\ud83c\udfc6 Novo Recorde!", 36, new Color(0.584f, 0.882f, 0.827f, 1f));
+        TextMeshProUGUI newRecordText = CreateText(gameOverPanel.transform, "NewRecord", "★ Novo Recorde!", 36, new Color(0.584f, 0.882f, 0.827f, 1f));
         newRecordText.gameObject.SetActive(false);
 
         // Restart button
